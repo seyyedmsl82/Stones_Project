@@ -190,3 +190,4 @@ for epoch in range(num_epochs):
 
     # Update the learning rate
     scheduler.step(val_epoch_loss)
+
