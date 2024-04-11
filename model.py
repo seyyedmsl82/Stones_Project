@@ -1,20 +1,25 @@
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 import PIL.Image as Image
+from tqdm import tqdm
+
+from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
 
 import torch
 from torch import nn
 import torch.optim as optim
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torchvision.models as models
-from torchvision import datasets, transforms
-from torchvision.transforms import ToTensor
+from torchvision import transforms
+from torchvision.transforms import ToTensor, Resize
 from torch.utils.data import DataLoader, Dataset
 
-batch_size = 64
-num_epochs = 100
+batch_size = 50
+num_epochs = 10
 
 device = ("cuda"
           if torch.cuda.is_available()
@@ -34,6 +39,10 @@ class StoneDataset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
 
+        # Initialize LabelEncoder
+        self.label_encoder = preprocessing.LabelEncoder()
+        self.label_encoder.fit(self.label)
+
     def __len__(self):
         return len(self.data)
 
@@ -41,6 +50,9 @@ class StoneDataset(Dataset):
         image_path = os.path.join(f"data/{self.gp}/", self.img_path[index])
         label = self.label[index]
         # image = plt.imread(image_path)
+        # Encode the label
+        label = self.label_encoder.transform([label])[0]
+        label = torch.as_tensor(np.uint8(label))
 
         image = Image.open(image_path).convert('RGB')
 
@@ -54,14 +66,11 @@ class StoneDataset(Dataset):
 
 
 transform = transforms.Compose([
-    transforms.Resize((512, 512)),
-    transforms.ToTensor()
+    Resize((512, 512)),
+    ToTensor()
 ])
 
 # Datasets
-# train_dataset = StoneDataset(r"data/train.csv", gp="train", transform=ToTensor(), resize=transforms.Resize((256, 256)))
-# test_dataset = StoneDataset(r"data/test.csv", gp="test", transform=ToTensor(), resize=transforms.Resize((256, 256)))
-
 train_dataset = StoneDataset(r"data/train.csv", gp="train", transform=transform)
 test_dataset = StoneDataset(r"data/test.csv", gp="test", transform=transform)
 
@@ -82,7 +91,7 @@ class Net(nn.Module):
 
         # Additional layers
         self.dropout1 = nn.Dropout(0.3)
-        self.fc1 = nn.Linear(512, 256)
+        self.fc1 = nn.Linear(1000, 256)
         self.dropout2 = nn.Dropout(0.4)
         self.batch_norm1 = nn.BatchNorm1d(256)
         self.fc2 = nn.Linear(256, 128)
