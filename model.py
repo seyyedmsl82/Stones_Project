@@ -72,7 +72,7 @@ transform = transforms.Compose([
 
 # Datasets
 train_dataset = StoneDataset(r"data/train.csv", gp="train", transform=transform)
-val_dataset = StoneDataset(r"data/val.csv", gp="val", transform=transform)
+train_dataset, val_dataset = train_test_split(train_dataset, test_size=0.33, random_state=42)
 test_dataset = StoneDataset(r"data/test.csv", gp="test", transform=transform)
 
 # DataLoaders
