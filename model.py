@@ -118,6 +118,7 @@ class Net(nn.Module):
 model = Net()
 model = model.to(device)
 
+learning_rate = 0.001
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
