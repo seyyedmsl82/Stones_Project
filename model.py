@@ -65,13 +65,21 @@ class StoneDataset(Dataset):
         return image, label
 
 
+# Augmentation transforms
+train_transform = transforms.Compose([
+    transforms.Resize((512, 512)),
+    transforms.RandomHorizontalFlip(),  # Randomly flip the image horizontally
+    transforms.RandomRotation(15),      # Randomly rotate the image by up to 15 degrees
+    transforms.ToTensor()
+])
+
 transform = transforms.Compose([
     Resize((512, 512)),
     ToTensor()
 ])
 
 # Datasets
-train_dataset = StoneDataset(r"data/train.csv", gp="train", transform=transform)
+train_dataset = StoneDataset(r"data/train.csv", gp="train", transform=train_transform)
 train_dataset, val_dataset = train_test_split(train_dataset, test_size=0.33, random_state=42)
 test_dataset = StoneDataset(r"data/test.csv", gp="test", transform=transform)
 
