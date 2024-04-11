@@ -72,10 +72,12 @@ transform = transforms.Compose([
 
 # Datasets
 train_dataset = StoneDataset(r"data/train.csv", gp="train", transform=transform)
+val_dataset = StoneDataset(r"data/val.csv", gp="val", transform=transform)
 test_dataset = StoneDataset(r"data/test.csv", gp="test", transform=transform)
 
 # DataLoaders
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 
@@ -128,37 +130,50 @@ for epoch in range(num_epochs):
     train_running_loss = 0.0
     train_acc = 0.0
 
-    model = model.train()
-
-    # Wrap the train_dataloader with tqdm for a progress bar
+    model.train()
     train_dataloader_with_progress = tqdm(train_dataloader, desc=f"Epoch {epoch}/{num_epochs}")
 
-    # training step
     for i, (images, labels) in enumerate(train_dataloader_with_progress):
         images = images.to(device)
         labels = labels.to(device)
 
-        # forward + backprop + loss
+        optimizer.zero_grad()
         logits = model(images)
         loss = criterion(logits, labels)
-        optimizer.zero_grad()
         loss.backward()
-
-        # update model params
         optimizer.step()
 
         train_running_loss += loss.detach().item()
-
-        # Compute accuracy
         corrects = (torch.max(logits, 1)[1] == labels).sum().item()
         accuracy = 100.0 * corrects / len(labels)
         train_acc += accuracy
-
-        # Update progress bar description
         train_dataloader_with_progress.set_postfix(loss=train_running_loss / (i + 1), accuracy=train_acc / (i + 1))
 
     # Compute average loss and accuracy for the epoch
     epoch_loss = train_running_loss / len(train_dataloader)
     epoch_acc = train_acc / len(train_dataloader)
 
-    print(f'Epoch: {epoch + 1}/{num_epochs}, Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f}')
+    # Validation step
+    val_running_loss = 0.0
+    val_acc = 0.0
+
+    model.eval()  # Set the model to evaluation mode
+    with torch.no_grad():
+        for images, labels in val_dataloader:
+            images = images.to(device)
+            labels = labels.to(device)
+
+            logits = model(images)
+            val_loss = criterion(logits, labels)
+            val_running_loss += val_loss.item()
+
+            corrects = (torch.max(logits, 1)[1] == labels).sum().item()
+            accuracy = 100.0 * corrects / len(labels)
+            val_acc += accuracy
+
+    val_epoch_loss = val_running_loss / len(val_dataloader)
+    val_epoch_acc = val_acc / len(val_dataloader)
+
+    print(f'Epoch: {epoch + 1}/{num_epochs}, '
+          f'Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f}, '
+          f'Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_acc:.2f}')
