@@ -124,6 +124,9 @@ learning_rate = 0.001
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+# Define the learning rate scheduler
+scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
+
 
 # Training loop with tqdm progress bar
 for epoch in range(num_epochs):
@@ -177,3 +180,6 @@ for epoch in range(num_epochs):
     print(f'Epoch: {epoch + 1}/{num_epochs}, '
           f'Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f}, '
           f'Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_acc:.2f}')
+
+    # Update the learning rate
+    scheduler.step(val_epoch_loss)
