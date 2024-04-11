@@ -123,22 +123,18 @@ criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 
-# compute accuracy
-def get_accuracy(logit, target, batchsize=batch_size):
-    """ Obtain accuracy for training round """
-    corrects = (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
-    accuracy = 100.0 * corrects / batchsize
-    return accuracy.item()
-
-
+# Training loop with tqdm progress bar
 for epoch in range(num_epochs):
     train_running_loss = 0.0
     train_acc = 0.0
 
     model = model.train()
 
+    # Wrap the train_dataloader with tqdm for a progress bar
+    train_dataloader_with_progress = tqdm(train_dataloader, desc=f"Epoch {epoch}/{num_epochs}")
+
     # training step
-    for i, (images, labels) in enumerate(train_dataloader):
+    for i, (images, labels) in enumerate(train_dataloader_with_progress):
         images = images.to(device)
         labels = labels.to(device)
 
@@ -152,7 +148,17 @@ for epoch in range(num_epochs):
         optimizer.step()
 
         train_running_loss += loss.detach().item()
-        train_acc += get_accuracy(logits, labels, batch_size)
 
-    model.eval()
-    print('Epoch: %d | Loss: %.4f | Train Accuracy: %.2f' % (epoch, train_running_loss / i, train_acc / i))
+        # Compute accuracy
+        corrects = (torch.max(logits, 1)[1] == labels).sum().item()
+        accuracy = 100.0 * corrects / len(labels)
+        train_acc += accuracy
+
+        # Update progress bar description
+        train_dataloader_with_progress.set_postfix(loss=train_running_loss / (i + 1), accuracy=train_acc / (i + 1))
+
+    # Compute average loss and accuracy for the epoch
+    epoch_loss = train_running_loss / len(train_dataloader)
+    epoch_acc = train_acc / len(train_dataloader)
+
+    print(f'Epoch: {epoch + 1}/{num_epochs}, Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f}')
