@@ -1,13 +1,10 @@
+# Import necessary libraries
 import os
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import PIL.Image as Image
 from tqdm import tqdm
-
-from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
 
 import torch
 from torch import nn
@@ -17,23 +14,32 @@ import torchvision.models as models
 from torchvision import transforms
 from torchvision.transforms import ToTensor, Resize
 from torch.utils.data import DataLoader, Dataset
+from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
 
+# Set batch size and number of epochs
 batch_size = 50
 num_epochs = 10
 
-device = ("cuda"
-          if torch.cuda.is_available()
-          else "mps"
-          if torch.backends.mps.is_available()
-          else "cpu")
+# Check for available device (GPU or CPU)
+device = ("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# Custom Dataset
+# Custom Dataset class for handling data
 class StoneDataset(Dataset):
     def __init__(self, data_address, gp="train", transform=None, target_transform=None):
+        """
+        Custom dataset class to load and preprocess stone images dataset.
+
+        Args:
+        - data_address (str): Path to the CSV file containing image paths and labels.
+        - gp (str): Specifies if the dataset is for training or testing.
+        - transform (callable, optional): Optional transform to be applied on a sample.
+        - target_transform (callable, optional): Optional transform to be applied on labels.
+
+        """
         self.data = pd.read_csv(data_address)
         self.gp = gp
-
         self.img_path = self.data.iloc[:, 0]
         self.label = self.data.iloc[:, -1]
         self.transform = transform
@@ -49,7 +55,6 @@ class StoneDataset(Dataset):
     def __getitem__(self, index):
         image_path = os.path.join(f"data/{self.gp}/", self.img_path[index])
         label = self.label[index]
-        # image = plt.imread(image_path)
         # Encode the label
         label = self.label_encoder.transform([label])[0]
         label = torch.as_tensor(np.uint8(label))
@@ -65,7 +70,7 @@ class StoneDataset(Dataset):
         return image, label
 
 
-# Augmentation transforms
+# Define image augmentation and transformation
 train_transform = transforms.Compose([
     transforms.Resize((512, 512)),
     transforms.RandomHorizontalFlip(),  # Randomly flip the image horizontally
@@ -78,24 +83,24 @@ transform = transforms.Compose([
     ToTensor()
 ])
 
-# Datasets
+# Load datasets and split into training and validation sets
 train_dataset = StoneDataset(r"data/train.csv", gp="train", transform=train_transform)
 train_dataset, val_dataset = train_test_split(train_dataset, test_size=0.2, random_state=42)
 test_dataset = StoneDataset(r"data/test.csv", gp="test", transform=transform)
 
-# DataLoaders
+# Create DataLoaders
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 
-# Neural Network
+# Define the neural network architecture
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
         self.base_model = models.resnet50(pretrained=True)
 
-        # Freeze parameters so we don't backprop through them
+        # Freeze parameters to prevent backpropagation
         for param in self.base_model.parameters():
             param.requires_grad = False
 
@@ -125,14 +130,14 @@ class Net(nn.Module):
         return x
 
 
+# Instantiate the model and move it to the appropriate device (GPU or CPU)
 model = Net()
 model = model.to(device)
 
+# Set loss function, optimizer, and learning rate scheduler
 learning_rate = 0.001
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-# Define the learning rate scheduler
 scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
 
 # Training loop with tqdm progress bar
@@ -140,7 +145,7 @@ for epoch in range(num_epochs):
     train_running_loss = 0.0
     train_acc = 0.0
 
-    model.train()
+    model.train()  # Set the model to training mode
     train_dataloader_with_progress = tqdm(train_dataloader, desc=f"Epoch {epoch}/{num_epochs}")
 
     for i, (images, labels) in enumerate(train_dataloader_with_progress):
@@ -190,4 +195,3 @@ for epoch in range(num_epochs):
 
     # Update the learning rate
     scheduler.step(val_epoch_loss)
-
