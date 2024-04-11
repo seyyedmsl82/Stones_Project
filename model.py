@@ -113,3 +113,45 @@ class Net(nn.Module):
         x = self.batch_norm2(x)
         x = self.fc3(x)
         return x
+
+
+model = Net()
+model = model.to(device)
+
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+
+# compute accuracy
+def get_accuracy(logit, target, batchsize=batch_size):
+    """ Obtain accuracy for training round """
+    corrects = (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
+    accuracy = 100.0 * corrects / batchsize
+    return accuracy.item()
+
+
+for epoch in range(num_epochs):
+    train_running_loss = 0.0
+    train_acc = 0.0
+
+    model = model.train()
+
+    # training step
+    for i, (images, labels) in enumerate(train_dataloader):
+        images = images.to(device)
+        labels = labels.to(device)
+
+        # forward + backprop + loss
+        logits = model(images)
+        loss = criterion(logits, labels)
+        optimizer.zero_grad()
+        loss.backward()
+
+        # update model params
+        optimizer.step()
+
+        train_running_loss += loss.detach().item()
+        train_acc += get_accuracy(logits, labels, batch_size)
+
+    model.eval()
+    print('Epoch: %d | Loss: %.4f | Train Accuracy: %.2f' % (epoch, train_running_loss / i, train_acc / i))
