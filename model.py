@@ -1,74 +1,22 @@
 # Import necessary libraries
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-import PIL.Image as Image
 from tqdm import tqdm
-
 import torch
 from torch import nn
-import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-import torchvision.models as models
 from torchvision import transforms
 from torchvision.transforms import ToTensor, Resize
-from torch.utils.data import DataLoader, Dataset
-from sklearn import preprocessing
+from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
+# locals
+from dataset import StoneDataset
+from neural_net import Net
 
 # Set batch size and number of epochs
-batch_size = 50
-num_epochs = 10
+batch_size = 64
+num_epochs = 30
 
 # Check for available device (GPU or CPU)
 device = ("cuda" if torch.cuda.is_available() else "cpu")
-
-
-# Custom Dataset class for handling data
-class StoneDataset(Dataset):
-    def __init__(self, data_address, gp="train", transform=None, target_transform=None):
-        """
-        Custom dataset class to load and preprocess stone images dataset.
-
-        Args:
-        - data_address (str): Path to the CSV file containing image paths and labels.
-        - gp (str): Specifies if the dataset is for training or testing.
-        - transform (callable, optional): Optional transform to be applied on a sample.
-        - target_transform (callable, optional): Optional transform to be applied on labels.
-
-        """
-        self.data = pd.read_csv(data_address)
-        self.gp = gp
-        self.img_path = self.data.iloc[:, 0]
-        self.label = self.data.iloc[:, -1]
-        self.transform = transform
-        self.target_transform = target_transform
-
-        # Initialize LabelEncoder
-        self.label_encoder = preprocessing.LabelEncoder()
-        self.label_encoder.fit(self.label)
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        image_path = os.path.join(f"data/{self.gp}/", self.img_path[index])
-        label = self.label[index]
-        # Encode the label
-        label = self.label_encoder.transform([label])[0]
-        label = torch.as_tensor(np.uint8(label))
-
-        image = Image.open(image_path).convert('RGB')
-
-        if self.transform is not None:
-            image = self.transform(image)
-
-        if self.target_transform is not None:
-            label = self.target_transform(label)
-
-        return image, label
-
 
 # Define image augmentation and transformation
 train_transform = transforms.Compose([
@@ -83,52 +31,18 @@ transform = transforms.Compose([
     ToTensor()
 ])
 
-# Load datasets and split into training and validation sets
+# Load datasets
 train_dataset = StoneDataset(r"data/train.csv", gp="train", transform=train_transform)
-train_dataset, val_dataset = train_test_split(train_dataset, test_size=0.2, random_state=42)
+train_dataset, val_dataset = (train_test_split(train_dataset,
+                                               test_size=0.2,
+                                               random_state=42)
+                              )  # split 20% of train data into validation set
 test_dataset = StoneDataset(r"data/test.csv", gp="test", transform=transform)
 
 # Create DataLoaders
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
-
-# Define the neural network architecture
-class Net(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.base_model = models.resnet50(pretrained=True)
-
-        # Freeze parameters to prevent backpropagation
-        for param in self.base_model.parameters():
-            param.requires_grad = False
-
-        # Additional layers
-        self.dropout1 = nn.Dropout(0.3)
-        self.fc1 = nn.Linear(1000, 256)
-        self.dropout2 = nn.Dropout(0.4)
-        self.batch_norm1 = nn.BatchNorm1d(256)
-        self.fc2 = nn.Linear(256, 128)
-        self.dropout3 = nn.Dropout(0.4)
-        self.batch_norm2 = nn.BatchNorm1d(128)
-        self.fc3 = nn.Linear(128, 5)
-
-    def forward(self, x):
-        x = self.base_model(x)
-        x = self.dropout1(x)
-        x = torch.flatten(x, 1)
-        x = self.fc1(x)
-        x = nn.functional.relu(x)
-        x = self.dropout2(x)
-        x = self.batch_norm1(x)
-        x = self.fc2(x)
-        x = nn.functional.relu(x)
-        x = self.dropout3(x)
-        x = self.batch_norm2(x)
-        x = self.fc3(x)
-        return x
-
 
 # Instantiate the model and move it to the appropriate device (GPU or CPU)
 model = Net()
@@ -162,7 +76,8 @@ for epoch in range(num_epochs):
         corrects = (torch.max(logits, 1)[1] == labels).sum().item()
         accuracy = 100.0 * corrects / len(labels)
         train_acc += accuracy
-        train_dataloader_with_progress.set_postfix(loss=train_running_loss / (i + 1), accuracy=train_acc / (i + 1))
+        train_dataloader_with_progress.set_postfix(loss=train_running_loss / (i + 1),
+                                                   accuracy=train_acc / (i + 1))
 
     # Compute average loss and accuracy for the epoch
     epoch_loss = train_running_loss / len(train_dataloader)
@@ -189,9 +104,14 @@ for epoch in range(num_epochs):
     val_epoch_loss = val_running_loss / len(val_dataloader)
     val_epoch_acc = val_acc / len(val_dataloader)
 
-    print(f'Epoch: {epoch + 1}/{num_epochs}, '
-          f'Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f}, '
-          f'Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_acc:.2f}')
+    # print(f'Epoch: {epoch + 1}/{num_epochs}, '
+    #       f'Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f}, '
+    #       f'Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_acc:.2f}')
+    loggggg = f'''Epoch: {epoch + 1}/{num_epochs},
+                Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f},
+                Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_acc:.2f} \n'''
+    with open("mylog.txt", "a") as f:
+        f.write(loggggg)
 
     # Update the learning rate
     scheduler.step(val_epoch_loss)
