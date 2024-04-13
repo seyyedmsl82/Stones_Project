@@ -54,6 +54,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
 
+
 # Training loop with tqdm progress bar
 for epoch in range(num_epochs):
     train_running_loss = 0.0
@@ -107,11 +108,22 @@ for epoch in range(num_epochs):
     # print(f'Epoch: {epoch + 1}/{num_epochs}, '
     #       f'Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f}, '
     #       f'Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_acc:.2f}')
-    loggggg = f'''Epoch: {epoch + 1}/{num_epochs},
+    training_log = f'''Epoch: {epoch + 1}/{num_epochs},
                 Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f},
                 Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_acc:.2f} \n'''
     with open("mylog.txt", "a") as f:
-        f.write(loggggg)
+        f.write(training_log)
 
     # Update the learning rate
     scheduler.step(val_epoch_loss)
+
+
+for i, (images, labels) in enumerate(test_dataloader):
+    images = images.to(device)
+    labels = labels.to(device)
+
+    logits = model(images)
+    corrects = (torch.max(logits, 1)[1] == labels).sum().item()
+    test_accuracy = 100.0 * corrects / len(labels)
+
+print(test_accuracy)
