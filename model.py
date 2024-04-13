@@ -12,7 +12,7 @@ from dataset import StoneDataset
 from neural_net import Net
 
 # Set batch size and number of epochs
-batch_size = 64
+batch_size = 50
 num_epochs = 30
 
 # Check for available device (GPU or CPU)
@@ -54,6 +54,8 @@ criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
 
+# clear log file
+open("mylog.txt", "w")
 
 # Training loop with tqdm progress bar
 for epoch in range(num_epochs):
@@ -125,5 +127,8 @@ for i, (images, labels) in enumerate(test_dataloader):
     logits = model(images)
     corrects = (torch.max(logits, 1)[1] == labels).sum().item()
     test_accuracy = 100.0 * corrects / len(labels)
+
+with open("mylog.txt", "a") as f:
+    f.write(f'Test Accuracy: {test_accuracy:.2f}')
 
 print(test_accuracy)
