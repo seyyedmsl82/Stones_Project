@@ -1,10 +1,14 @@
 # Import necessary libraries
+from PIL import Image
+import matplotlib.pyplot as plt
+import numpy as np
+
 from tqdm import tqdm
 import torch
 from torch import nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision import transforms
-from torchvision.transforms import ToTensor, Resize
+from torchvision.transforms import ToTensor, Resize, functional
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 # locals
@@ -23,7 +27,8 @@ train_transform = transforms.Compose([
     transforms.Resize((512, 512)),
     transforms.RandomHorizontalFlip(),  # Randomly flip the image horizontally
     transforms.RandomRotation(15),  # Randomly rotate the image by up to 15 degrees
-    transforms.ToTensor()
+    transforms.ToTensor(),
+    # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
 transform = transforms.Compose([
@@ -42,7 +47,7 @@ test_dataset = StoneDataset(r"data/test.csv", gp="test", transform=transform)
 # Create DataLoaders
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
 
 # Instantiate the model and move it to the appropriate device (GPU or CPU)
 model = Net()
@@ -107,9 +112,6 @@ for epoch in range(num_epochs):
     val_epoch_loss = val_running_loss / len(val_dataloader)
     val_epoch_acc = val_acc / len(val_dataloader)
 
-    # print(f'Epoch: {epoch + 1}/{num_epochs}, '
-    #       f'Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f}, '
-    #       f'Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_acc:.2f}')
     training_log = f'''Epoch: {epoch + 1}/{num_epochs},
                 Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f},
                 Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_acc:.2f} \n'''
@@ -119,7 +121,6 @@ for epoch in range(num_epochs):
     # Update the learning rate
     scheduler.step(val_epoch_loss)
 
-
 for i, (images, labels) in enumerate(test_dataloader):
     images = images.to(device)
     labels = labels.to(device)
@@ -128,7 +129,34 @@ for i, (images, labels) in enumerate(test_dataloader):
     corrects = (torch.max(logits, 1)[1] == labels).sum().item()
     test_accuracy = 100.0 * corrects / len(labels)
 
-with open("mylog.txt", "a") as f:
-    f.write(f'Test Accuracy: {test_accuracy:.2f}')
+    with open("mylog.txt", "a") as f:
+        f.write(f'Test Accuracy: {test_accuracy:.2f}')
 
-print(test_accuracy)
+    print(test_accuracy)
+
+
+image = Image.open("data/train/C_processed_image_42.jpg")
+image = transform(image)
+image = image.to(device)
+image = image.unsqueeze(0)
+output = model(image)
+
+# Choose the layer whose feature maps you want to visualize
+target_layer = model.base_model.conv1
+
+# Get the activations (feature maps) from the target layer
+activations = target_layer(image).cpu()
+
+# Convert activations to numpy array
+activations = activations.detach().numpy()
+
+# Visualize the feature maps
+num_feature_maps = activations.shape[1]  # Number of feature maps
+plt.figure(figsize=(24, 24))
+for i in range(num_feature_maps):
+    plt.subplot(9, 8, i+1)  # Adjust the subplot layout based on the number of feature maps
+    plt.imshow(activations[0, i, :, :], cmap='gray')
+    plt.axis('off')
+
+plt.savefig("feature_maps.png")
+plt.show()
