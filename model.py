@@ -8,12 +8,16 @@ import torch
 from torch import nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision import transforms
-from torchvision.transforms import ToTensor, Resize, functional
+from torchvision.transforms import ToTensor, Resize
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 # locals
 from dataset import StoneDataset
 from neural_net import Net
+
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+from pytorch_grad_cam.utils.image import show_cam_on_image
 
 # Set batch size and number of epochs
 batch_size = 50
@@ -133,30 +137,68 @@ for i, (images, labels) in enumerate(test_dataloader):
         f.write(f'Test Accuracy: {test_accuracy:.2f}')
 
     print(test_accuracy)
+#
+#
+# image = Image.open("data/train/C_processed_image_42.jpg")
+# image = transform(image)
+# image = image.to(device)
+# image = image.unsqueeze(0)
+# output = model(image)
+#
+# # Choose the layer whose feature maps you want to visualize
+# target_layer = model.base_model.conv1
+#
+# # Get the activations (feature maps) from the target layer
+# activations = target_layer(image).cpu()
+#
+# # Convert activations to numpy array
+# activations = activations.detach().numpy()
+#
+# # Visualize the feature maps
+# num_feature_maps = activations.shape[1]  # Number of feature maps
+# plt.figure(figsize=(24, 24))
+# for i in range(num_feature_maps):
+#     plt.subplot(9, 8, i+1)  # Adjust the subplot layout based on the number of feature maps
+#     plt.imshow(activations[0, i, :, :], cmap='gray')
+#     plt.axis('off')
+#
+# plt.savefig("feature_maps.png")
+# plt.show()
 
+# set the model to evaluation mode
+model.eval()
+img_ = Image.open('data/train/A_processed_image_14.jpg')
+img = transform(img_).unsqueeze(0)
+img = img.to(device)
 
-image = Image.open("data/train/C_processed_image_42.jpg")
-image = transform(image)
-image = image.to(device)
-image = image.unsqueeze(0)
-output = model(image)
+logits = model(img)
+pred = torch.argmax(logits, dim=1)
 
-# Choose the layer whose feature maps you want to visualize
-target_layer = model.base_model.conv1
+# Compute the gradients of the predicted class output with respect to the activations of the target layer
+model.zero_grad()
+logits[:, pred].backward()
 
-# Get the activations (feature maps) from the target layer
-activations = target_layer(image).cpu()
+# Get the activations of the additional_conv layer
+gradients = model.additional_conv.weight.grad  # Gradients of additional_conv with respect to the output
+activations = model.additional_conv.weight
 
-# Convert activations to numpy array
-activations = activations.detach().numpy()
+# Compute the gradient-weighted class activation map (CAM)
+cam = torch.mean(gradients, dim=(2, 3))  # Global average pooling along spatial dimensions
+cam = nn.functional.relu(cam)
+cam = cam.detach().cpu().numpy()[0]  # Convert to numpy array
 
-# Visualize the feature maps
-num_feature_maps = activations.shape[1]  # Number of feature maps
-plt.figure(figsize=(24, 24))
-for i in range(num_feature_maps):
-    plt.subplot(9, 8, i+1)  # Adjust the subplot layout based on the number of feature maps
-    plt.imshow(activations[0, i, :, :], cmap='gray')
-    plt.axis('off')
+# # Normalize the CAM
+cam = (cam - np.min(cam)) / (np.max(cam) - np.min(cam) + 1e-10)
 
-plt.savefig("feature_maps.png")
+# Resize the CAM to match the input image size
+cam = np.uint8(255 * cam)
+cam = np.uint8(Image.fromarray(cam).resize((512, 512), Image.Resampling.LANCZOS))
+
+# Convert the input image to a numpy array
+input_image_np = img.squeeze().cpu().numpy().transpose(1, 2, 0)
+
+# Visualize the CAM overlaid on the input image
+plt.imshow(input_image_np)
+plt.imshow(cam, cmap='jet', alpha=0.5)  # Overlay the CAM on the input image using a jet colormap
+plt.axis('off')
 plt.show()

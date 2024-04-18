@@ -14,9 +14,13 @@ class Net(nn.Module):
         for param in self.base_model.parameters():
             param.requires_grad = False
 
+        # Additional convolutional layer
+        self.additional_conv = nn.Conv2d(in_channels=1000, out_channels=512, kernel_size=3, padding=1)
+        self.relu = nn.ReLU(inplace=True)
+
         # Additional layers
         self.dropout1 = nn.Dropout(0.3)
-        self.fc1 = nn.Linear(1000, 256)
+        self.fc1 = nn.Linear(512, 256)
         self.dropout2 = nn.Dropout(0.4)
         self.batch_norm1 = nn.BatchNorm1d(256)
         self.fc2 = nn.Linear(256, 128)
@@ -26,7 +30,12 @@ class Net(nn.Module):
 
     def forward(self, x):
         x = self.base_model(x)
+
+        x = x.unsqueeze(2).unsqueeze(3)  # Add dummy height and width dimensions
+        x = self.additional_conv(x)
+        x = self.relu(x)
         x = self.dropout1(x)
+
         x = torch.flatten(x, 1)
         x = self.fc1(x)
         x = nn.functional.relu(x)
