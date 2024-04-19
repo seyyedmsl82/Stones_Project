@@ -1,8 +1,5 @@
 # Import necessary libraries
-from PIL import Image
 import matplotlib.pyplot as plt
-import numpy as np
-from tqdm import tqdm
 import torch
 from torch import nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -12,18 +9,20 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 # locals
 from dataset import StoneDataset
+from utils import grad_cam, feature_maps, train
 from neural_net import Net
 
 # Set batch size and number of epochs
 batch_size = 50
 num_epochs = 30
+image_size = (512, 512)
 
 # Check for available device (GPU or CPU)
 device = ("cuda" if torch.cuda.is_available() else "cpu")
 
 # Define image augmentation and transformation
 train_transform = transforms.Compose([
-    transforms.Resize((512, 512)),
+    transforms.Resize(image_size),
     transforms.RandomHorizontalFlip(),  # Randomly flip the image horizontally
     transforms.RandomRotation(15),  # Randomly rotate the image by up to 15 degrees
     transforms.ToTensor(),
@@ -31,7 +30,7 @@ train_transform = transforms.Compose([
 ])
 
 transform = transforms.Compose([
-    Resize((512, 512)),
+    Resize(image_size),
     ToTensor()
 ])
 
@@ -61,149 +60,28 @@ scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, ver
 # clear log file
 open("mylog.txt", "w")
 
-# Training loop with tqdm progress bar
-for epoch in range(num_epochs):
-    train_running_loss = 0.0
-    train_acc = 0.0
+# train and test the model
+model = train(model,
+              train_dataloader,
+              val_dataloader,
+              test_dataloader,
+              optimizer,
+              criterion,
+              num_epochs,
+              device,
+              scheduler)
 
-    model.train()  # Set the model to training mode
-    train_dataloader_with_progress = tqdm(train_dataloader, desc=f"Epoch {epoch}/{num_epochs}")
+CAM, image = grad_cam(model,
+                      'data/train/A_processed_image_14.jpg',
+                      image_size=image_size,
+                      transform=transform, device=device)
 
-    for i, (images, labels) in enumerate(train_dataloader_with_progress):
-        images = images.to(device)
-        labels = labels.to(device)
+feature_maps(model,
+             'data/train/A_processed_image_14.jpg',
+             transform=transform, device=device)
 
-        optimizer.zero_grad()
-        logits = model(images)
-        loss = criterion(logits, labels)
-        loss.backward()
-        optimizer.step()
-
-        train_running_loss += loss.detach().item()
-        corrects = (torch.max(logits, 1)[1] == labels).sum().item()
-        accuracy = 100.0 * corrects / len(labels)
-        train_acc += accuracy
-        train_dataloader_with_progress.set_postfix(loss=train_running_loss / (i + 1),
-                                                   accuracy=train_acc / (i + 1))
-
-    # Compute average loss and accuracy for the epoch
-    epoch_loss = train_running_loss / len(train_dataloader)
-    epoch_acc = train_acc / len(train_dataloader)
-
-    # Validation step
-    val_running_loss = 0.0
-    val_acc = 0.0
-
-    model.eval()  # Set the model to evaluation mode
-    with torch.no_grad():
-        for images, labels in val_dataloader:
-            images = images.to(device)
-            labels = labels.to(device)
-
-            logits = model(images)
-            val_loss = criterion(logits, labels)
-            val_running_loss += val_loss.item()
-
-            corrects = (torch.max(logits, 1)[1] == labels).sum().item()
-            accuracy = 100.0 * corrects / len(labels)
-            val_acc += accuracy
-
-    val_epoch_loss = val_running_loss / len(val_dataloader)
-    val_epoch_acc = val_acc / len(val_dataloader)
-
-    training_log = f'''Epoch: {epoch + 1}/{num_epochs},
-                Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f},
-                Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_acc:.2f} \n'''
-    with open("mylog.txt", "a") as f:
-        f.write(training_log)
-
-    # Update the learning rate
-    scheduler.step(val_epoch_loss)
-
-for i, (images, labels) in enumerate(test_dataloader):
-    images = images.to(device)
-    labels = labels.to(device)
-
-    logits = model(images)
-    corrects = (torch.max(logits, 1)[1] == labels).sum().item()
-    test_accuracy = 100.0 * corrects / len(labels)
-
-    with open("mylog.txt", "a") as f:
-        f.write(f'Test Accuracy: {test_accuracy:.2f}')
-
-    print(test_accuracy)
-
-
-def feature_maps(model, image_path):
-    image = Image.open(image_path)
-    image = transform(image)
-    image = image.to(device)
-    image = image.unsqueeze(0)
-    output = model(image)
-
-    # Choose the layer whose feature maps you want to visualize
-    target_layer = model.base_model.conv1
-
-    # Get the activations (feature maps) from the target layer
-    activations = target_layer(image).cpu()
-
-    # Convert activations to numpy array
-    activations = activations.detach().numpy()
-
-    # Visualize the feature maps
-    num_feature_maps = activations.shape[1]  # Number of feature maps
-    plt.figure(figsize=(24, 24))
-    for i in range(num_feature_maps):
-        plt.subplot(9, 8, i+1)  # Adjust the subplot layout based on the number of feature maps
-        plt.imshow(activations[0, i, :, :], cmap='gray')
-        plt.axis('off')
-
-    plt.savefig("feature_maps.png")
-    plt.show()
-
-
-def grad_cam(model, image_path):
-    # set the model to evaluation mode
-    model.eval()
-    img_ = Image.open(image_path)
-    img = transform(img_).unsqueeze(0)
-    img = img.to(device)
-
-    logits = model(img)
-    pred = torch.argmax(logits, dim=1)
-
-    # Compute the gradients of the predicted class output with respect to the activations of the target layer
-    model.zero_grad()
-    logits[:, pred].backward()
-
-    # Get the activations of the additional_conv layer
-    gradients = model.additional_conv.weight.grad  # Gradients of additional_conv with respect to the output
-    activations = model.additional_conv.weight
-
-    # Compute the gradient-weighted class activation map (CAM)
-    cam = torch.mean(gradients, dim=(2, 3))  # Global average pooling along spatial dimensions
-    cam = nn.functional.relu(cam)
-    cam = cam.detach().cpu().numpy()[0]  # Convert to numpy array
-
-    # # Normalize the CAM
-    cam = (cam - np.min(cam)) / (np.max(cam) - np.min(cam) + 1e-10)
-
-    # Resize the CAM to match the input image size
-    cam = np.uint8(255 * cam)
-    cam = np.uint8(Image.fromarray(cam).resize((512, 512), Image.Resampling.LANCZOS))
-
-    # Convert the input image to a numpy array
-    input_image_np = img.squeeze().cpu().numpy().transpose(1, 2, 0)
-
-    return cam, input_image_np
-
-
-CAM, image = grad_cam(model, 'data/train/A_processed_image_14.jpg')
-feature_maps(model, 'data/train/A_processed_image_14.jpg')
 # Visualize the CAM overlaid on the input image
 plt.imshow(image)
 plt.imshow(CAM, cmap='jet', alpha=0.5)  # Overlay the CAM on the input image using a jet colormap
 plt.axis('off')
 plt.show()
-
-
