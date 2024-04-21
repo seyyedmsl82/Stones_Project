@@ -10,23 +10,25 @@ from torch import nn
 def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, criterion, epochs, device, scheduler):
     """
     Description:
-    This function trains a given PyTorch model using the provided training and validation dataloaders,
-    for a specified number of epochs. It also evaluates the model on a test dataloader after training.
-    It logs the training and validation loss and accuracy for each epoch in a text file named "mylog.txt".
+        This function trains a given PyTorch model using the provided training and validation dataloaders,
+        for a specified number of epochs. It also evaluates the model on a test dataloader after training.
+        It logs the training and validation loss and accuracy for each epoch in a text file named "training_log.txt".
+
 
     Arguments:
-    :param model: The PyTorch model to be trained.
-    :param train_dataloader: Dataloader for the training dataset.
-    :param val_dataloader: Dataloader for the validation dataset.
-    :param test_dataloader: Dataloader for the test dataset.
-    :param optimizer: Optimizer used for training the model.
-    :param criterion: Loss function used for calculating the loss.
-    :param epochs: Number of epochs for training.
-    :param device: Device to be used for training ('cpu' or 'cuda').
-    :param scheduler: Learning rate scheduler.
+        :param model: The PyTorch model to be trained.
+        :param train_dataloader: Dataloader for the training dataset.
+        :param val_dataloader: Dataloader for the validation dataset.
+        :param test_dataloader: Dataloader for the test dataset.
+        :param optimizer: Optimizer used for training the model.
+        :param criterion: Loss function used for calculating the loss.
+        :param epochs: Number of epochs for training.
+        :param device: Device to be used for training ('cpu' or 'cuda').
+        :param scheduler: Learning rate scheduler.
+
 
     Outputs:
-    :return: Returns the trained PyTorch model.
+        :return: The trained PyTorch model.
     """
 
     # Training loop with tqdm progress bar
@@ -82,7 +84,7 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, c
         training_log = f'''Epoch: {epoch + 1}/{epochs},
                     Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f},
                     Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_acc:.2f} \n'''
-        with open("mylog.txt", "a") as f:
+        with open("training_log.txt", "a") as f:
             f.write(training_log)
 
         # Update the learning rate
@@ -96,7 +98,7 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, c
         corrects = (torch.max(logits, 1)[1] == labels).sum().item()
         test_accuracy = 100.0 * corrects / len(labels)
 
-        with open("mylog.txt", "a") as f:
+        with open("training_log.txt", "a") as f:
             f.write(f'Test Accuracy: {test_accuracy:.2f}')
 
         print(test_accuracy)
@@ -107,19 +109,21 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, c
 def feature_maps(model, image_path, transform=None, device="cpu"):
     """
     Description:
-    This function visualizes the feature maps of a given image using a pre-trained model.
-    It takes an image path, applies transformations if provided, and extracts feature maps
-    from a specified layer of the model. It then visualizes the feature maps using matplotlib
-    and saves the visualization as "feature_maps.png".
+        This function visualizes the feature maps of a given image using a pre-trained model.
+        It takes an image path, applies transformations if provided, and extracts feature maps
+        from a specified layer of the model. It then visualizes the feature maps using matplotlib
+        and saves the visualization as "feature_maps.png".
+
 
     Arguments:
-    :param model: Pre-trained PyTorch model.
-    :param image_path: Path to the input image.
-    :param transform: Optional image transformations.
-    :param device: Device to be used ('cpu' or 'cuda').
+        :param model: Pre-trained PyTorch model.
+        :param image_path: Path to the input image.
+        :param transform: Optional image transformations.
+        :param device: Device to be used ('cpu' or 'cuda').
+
 
     Outputs:
-    Displays and saves the visualization of feature maps.
+        Displays and saves the visualization of feature maps.
     """
 
     image = Image.open(image_path)
@@ -145,28 +149,30 @@ def feature_maps(model, image_path, transform=None, device="cpu"):
         plt.imshow(activations[0, i, :, :], cmap='gray')
         plt.axis('off')
 
-    plt.savefig("feature_maps.png")
+    plt.savefig("model/feature_maps.png")
     plt.show()
 
 
 def grad_cam(model, image_path, image_size, transform=None, device="cpu"):
     """
     Description:
-    This function computes the Gradient-weighted Class Activation Mapping (Grad-CAM) for a
-    given input image using a pre-trained model. It computes the class activation map (CAM)
-    and visualizes it overlaid on the input image. It returns the CAM and the input image as
-    NumPy arrays.
+        This function computes the Gradient-weighted Class Activation Mapping (Grad-CAM) for a
+        given input image using a pre-trained model. It computes the class activation map (CAM)
+        and visualizes it overlaid on the input image. It returns the CAM and the input image as
+        NumPy arrays.
+
 
     Arguments:
-    :param model: Pre-trained PyTorch model.
-    :param image_path: Path to the input image.
-    :param image_size: Size of the input image.
-    :param transform: Optional image transformations
-    :param device: Device to be used ('cpu', 'cuda')
+        :param model: Pre-trained PyTorch model.
+        :param image_path: Path to the input image.
+        :param image_size: Size of the input image.
+        :param transform: Optional image transformations
+        :param device: Device to be used ('cpu', 'cuda')
+
 
     Outputs:
-    cam: Gradient-weighted Class Activation Map (CAM) as a NumPy array.
-    img: Input image as a NumPy array.
+        cam: Gradient-weighted Class Activation Map (CAM) as a NumPy array.
+        img: Input image as a NumPy array.
     """
 
     # set the model to evaluation mode

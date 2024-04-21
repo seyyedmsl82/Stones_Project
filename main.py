@@ -10,7 +10,8 @@ from sklearn.model_selection import train_test_split
 # locals
 from dataset import StoneDataset
 from utils import grad_cam, feature_maps, train
-from neural_net import Net
+from model import Net
+
 
 # Set batch size and number of epochs
 batch_size = 50
@@ -58,7 +59,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
 
 # clear log file
-open("mylog.txt", "w")
+open("training_log.txt", "w")
 
 # train and test the model
 model = train(model,
@@ -71,8 +72,8 @@ model = train(model,
               device,
               scheduler)
 
-print(model)
-torch.save(model.state_dict(), "./model/stone_model.pth")
+# # save the model
+# torch.save(model.state_dict(), "./model/stone_model.pth")
 
 CAM, image = grad_cam(model,
                       'data/train/A_processed_image_14.jpg',
