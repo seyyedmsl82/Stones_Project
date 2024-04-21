@@ -1,3 +1,5 @@
 data
 .idea
+
+# model
 ./model/stone_model.pth
