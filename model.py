@@ -71,6 +71,9 @@ model = train(model,
               device,
               scheduler)
 
+print(model)
+torch.save(model.state_dict(), "./model/stone_model.pth")
+
 CAM, image = grad_cam(model,
                       'data/train/A_processed_image_14.jpg',
                       image_size=image_size,
