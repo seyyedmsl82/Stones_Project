@@ -1,10 +1,11 @@
 import os
-
+import cv2
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from PIL import Image
 import torch
 from torchvision import transforms
 from model import neural_net
+from utils import image_cropper
 
 app = Flask(__name__)
 
@@ -32,7 +33,8 @@ transform = transforms.Compose([
 ])
 
 # Folder to save uploaded images
-UPLOAD_FOLDER = 'images'
+UPLOAD_FOLDER = 'media'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
@@ -64,12 +66,27 @@ def upload_image():
 
         if file:
             filename = file.filename
-            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            processes_filename = f"{filename.split('.')[0]}_processed.jpg"
+            filepath = os.path.join(UPLOAD_FOLDER + "/images/", filename)
+            print(filepath)
             file.save(filepath)
-            predicted_class = predict(filepath)
-            return render_template("result.html", image=filename, prediction=predicted_class)
+            selected_image = cv2.imread(filepath)
+            processed_image = image_cropper(selected_image)
+            new_file_path = os.path.join(UPLOAD_FOLDER + "/images/", processes_filename)
+            # print(processed_image)
+            cv2.imwrite(new_file_path, processed_image)
+
+            predicted_class = predict(new_file_path)
+            return render_template("result.html", image=f"images/{processes_filename}", prediction=predicted_class)
 
     return render_template("index.html")
+
+
+@app.get("/media/<path:path>")
+def serve_file(path):
+    return send_from_directory(
+        directory=app.config["UPLOAD_FOLDER"], path=path
+    )
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>Result</h1>
-    <img src="{{ url_for('static', filename=image) }}" alt="Uploaded Image">
+    <img src="{{ url_for('serve_file', path=image) }}" alt="Uploaded Image">
     <p>Predicted Class: {{ prediction }}</p>
 </body>
 </html>
