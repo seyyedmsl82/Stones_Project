@@ -81,7 +81,12 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(256, 128)
         self.dropout3 = nn.Dropout(0.4)
         self.batch_norm2 = nn.BatchNorm1d(128)
-        self.fc3 = nn.Linear(128, 5)
+
+        self.fc3 = nn.Linear(128, 64)
+        self.dropout4 = nn.Dropout(0.1)
+        self.batch_norm3 = nn.BatchNorm1d(64)
+
+        self.fc4 = nn.Linear(64, 5)
 
     def forward(self, x):
         x = self.base_model(x)
@@ -100,5 +105,11 @@ class Net(nn.Module):
         x = nn.functional.relu(x)
         x = self.dropout3(x)
         x = self.batch_norm2(x)
+
         x = self.fc3(x)
+        x = nn.functional.relu(x)
+        x = self.dropout4(x)
+        x = self.batch_norm3(x)
+
+        x = self.fc4(x)
         return x
