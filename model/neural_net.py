@@ -63,37 +63,33 @@ class Net(nn.Module):
     """
     def __init__(self):
         super().__init__()
-        self.base_model = models.resnet50(pretrained=True)
+        self.base_model = models.resnet18(pretrained=True)
 
         # Freeze parameters to prevent backpropagation
         for param in self.base_model.parameters():
             param.requires_grad = False
 
-        # Additional convolutional layer
-        self.additional_conv = nn.Conv2d(in_channels=1000, out_channels=512, kernel_size=3, padding=1)
-        self.relu = nn.ReLU(inplace=True)
+        # # Additional convolutional layer
+        # self.additional_conv = nn.Conv2d(in_channels=1000, out_channels=600, kernel_size=3, padding=1)
+        # self.relu = nn.ReLU(inplace=True)
 
         # Additional layers
         self.dropout1 = nn.Dropout(0.3)
-        self.fc1 = nn.Linear(512, 256)
+        self.fc1 = nn.Linear(1000, 256)
         self.dropout2 = nn.Dropout(0.4)
         self.batch_norm1 = nn.BatchNorm1d(256)
         self.fc2 = nn.Linear(256, 128)
         self.dropout3 = nn.Dropout(0.4)
         self.batch_norm2 = nn.BatchNorm1d(128)
 
-        self.fc3 = nn.Linear(128, 64)
-        self.dropout4 = nn.Dropout(0.1)
-        self.batch_norm3 = nn.BatchNorm1d(64)
-
-        self.fc4 = nn.Linear(64, 5)
+        self.fc3 = nn.Linear(128, 5)
 
     def forward(self, x):
         x = self.base_model(x)
 
-        x = x.unsqueeze(2).unsqueeze(3)  # Add dummy height and width dimensions
-        x = self.additional_conv(x)
-        x = self.relu(x)
+        # x = x.unsqueeze(2).unsqueeze(3)  # Add dummy height and width dimensions
+        # x = self.additional_conv(x)
+        # x = self.relu(x)
         x = self.dropout1(x)
 
         x = torch.flatten(x, 1)
@@ -107,9 +103,16 @@ class Net(nn.Module):
         x = self.batch_norm2(x)
 
         x = self.fc3(x)
-        x = nn.functional.relu(x)
-        x = self.dropout4(x)
-        x = self.batch_norm3(x)
-
-        x = self.fc4(x)
         return x
+
+    def unfreeze_layer(self, layer_name):
+        """
+        Unfreeze a specific layer in the base model.
+
+        Args:
+            layer_name (str): Name of the layer to unfreeze.
+        """
+        for name, param in self.base_model.named_parameters():
+            if name == layer_name:
+                param.requires_grad = True
+                break

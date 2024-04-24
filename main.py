@@ -12,11 +12,14 @@ from dataset import StoneDataset
 from utils import grad_cam, feature_maps, train
 from model import Net
 
+from pytorch_grad_cam import GradCAM, HiResCAM, ScoreCAM, GradCAMPlusPlus, AblationCAM, XGradCAM, EigenCAM, FullGrad
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+
 
 # Set batch size and number of epochs
 batch_size = 50
 num_epochs = 30
-image_size = (512, 512)
+image_size = (600, 600)
 
 # Check for available device (GPU or CPU)
 device = ("cuda" if torch.cuda.is_available() else "cpu")
@@ -50,13 +53,16 @@ test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=len(test_
 
 # Instantiate the model and move it to the appropriate device (GPU or CPU)
 model = Net()
+# Unfreeze the desired layer
+model.unfreeze_layer('layer4.1.conv2.weight')
+model.unfreeze_layer('layer4.1.conv2.bias')
 model = model.to(device)
 
 # Set loss function, optimizer, and learning rate scheduler
 learning_rate = 0.001
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
+scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=2, verbose=True)
 
 # clear log file
 open("training_log.txt", "w")
@@ -72,20 +78,24 @@ model = train(model,
               device,
               scheduler)
 
+# print(model.base_model.layer4[-1].conv2.weight.grad)
+
 # # save the model
-# torch.save(model.state_dict(), "./model/stone_model.pth")
+# torch.save(model.state_dict(), "stone_model.pth")
 
-CAM, image = grad_cam(model,
-                      'data/train/A_processed_image_14.jpg',
-                      image_size=image_size,
-                      transform=transform, device=device)
+# CAM, image = grad_cam(model,
+#                       'data/train/A_processed_image_14.jpg',
+#                       image_size=image_size,
+#                       transform=transform, device=device)
 
-feature_maps(model,
-             'data/train/A_processed_image_14.jpg',
-             transform=transform, device=device)
+# grad_cam(model, 'data/train/A_processed_image_14.jpg', transform=transform, device=device)
 
-# Visualize the CAM overlaid on the input image
-plt.imshow(image)
-plt.imshow(CAM, cmap='jet', alpha=0.5)  # Overlay the CAM on the input image using a jet colormap
-plt.axis('off')
-plt.show()
+# feature_maps(model,
+#              'data/train/A_processed_image_14.jpg',
+#              transform=transform, device=device)
+
+# # Visualize the CAM overlaid on the input image
+# plt.imshow(image)
+# plt.imshow(CAM, cmap='jet', alpha=0.5)  # Overlay the CAM on the input image using a jet colormap
+# plt.axis('off')
+# plt.show()

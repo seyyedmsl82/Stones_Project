@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 
@@ -31,6 +32,11 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, c
     Outputs:
         :return: The trained PyTorch model.
     """
+
+    train_losses = []
+    val_losses = []
+    train_accuracies = []
+    val_accuracies = []
 
     # Training loop with tqdm progress bar
     for epoch in range(epochs):
@@ -60,6 +66,8 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, c
         # Compute average loss and accuracy for the epoch
         epoch_loss = train_running_loss / len(train_dataloader)
         epoch_acc = train_acc / len(train_dataloader)
+        train_losses.append(epoch_loss)
+        train_accuracies.append(epoch_acc)
 
         # Validation step
         val_running_loss = 0.0
@@ -81,6 +89,8 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, c
 
         val_epoch_loss = val_running_loss / len(val_dataloader)
         val_epoch_acc = val_acc / len(val_dataloader)
+        val_losses.append(val_epoch_loss)
+        val_accuracies.append(val_epoch_acc)
 
         training_log = f'''Epoch: {epoch + 1}/{epochs},
                     Train Loss: {epoch_loss:.4f}, Train Accuracy: {epoch_acc:.2f},
@@ -91,18 +101,43 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, c
         # Update the learning rate
         scheduler.step(val_epoch_loss)
 
-    for i, (images, labels) in enumerate(test_dataloader):
-        images = images.to(device)
-        labels = labels.to(device)
+    # Plotting accuracy and loss
+    plt.figure(figsize=(10, 5))
+    plt.plot(train_losses, label='Train Loss')
+    plt.plot(val_losses, label='Val Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.show()
 
-        logits = model(images)
-        corrects = (torch.max(logits, 1)[1] == labels).sum().item()
-        test_accuracy = 100.0 * corrects / len(labels)
+    plt.figure(figsize=(10, 5))
+    plt.plot(train_accuracies, label='Train Accuracy')
+    plt.plot(val_accuracies, label='Val Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.title('Training and Validation Accuracy')
+    plt.legend()
+    plt.show()
 
-        with open("training_log.txt", "a") as f:
-            f.write(f'Test Accuracy: {test_accuracy:.2f}')
+    # Testing the model
+    model.eval()
+    test_correct = 0
+    total = 0
+    with torch.no_grad():
+        for images, labels in test_dataloader:
+            images = images.to(device)
+            labels = labels.to(device)
 
-        print(test_accuracy)
+            logits = model(images)
+            _, predicted = torch.max(logits.data, 1)
+            total += labels.size(0)
+            test_correct += (predicted == labels).sum().item()
+
+    test_accuracy = 100.0 * test_correct / total
+    print(f'Test Accuracy: {test_accuracy:.2f}%')
+    with open("training_log.txt", "a") as f:
+        f.write(f'Test Accuracy: {test_accuracy:.2f}')
 
     return model
 
@@ -147,10 +182,10 @@ def feature_maps(model, image_path, transform=None, device="cpu"):
     plt.figure(figsize=(24, 24))
     for i in range(num_feature_maps):
         plt.subplot(9, 8, i+1)  # Adjust the subplot layout based on the number of feature maps
-        plt.imshow(activations[0, i, :, :], cmap='gray')
+        plt.imshow(activations[0, i, :, :], cmap='jet')
         plt.axis('off')
 
-    plt.savefig("model/feature_maps.png")
+    # plt.savefig("model/feature_maps.png")
     plt.show()
 
 
@@ -189,8 +224,8 @@ def grad_cam(model, image_path, image_size, transform=None, device="cpu"):
     model.zero_grad()
     logits[:, pred].backward()
 
-    # Get the activations of the additional_conv layer
-    gradients = model.additional_conv.weight.grad  # Gradients of additional_conv with respect to the output
+    # Get the activations of the layer
+    gradients = model.base_model.layer4[-1].conv2.weight.grad
 
     # Compute the gradient-weighted class activation map (CAM)
     cam = torch.mean(gradients, dim=(2, 3))  # Global average pooling along spatial dimensions
@@ -208,6 +243,78 @@ def grad_cam(model, image_path, image_size, transform=None, device="cpu"):
     input_image_np = img.squeeze().cpu().numpy().transpose(1, 2, 0)
 
     return cam, input_image_np
+
+
+# def grad_cam(model, image_path, target_class=None, transform=None, device="cpu"):
+#     """
+#     Description:
+#         This function computes the Grad-CAM visualization of a given image using a pre-trained model.
+#         It takes an image path, applies transformations if provided, and computes the Grad-CAM heatmap
+#         overlaid on the original image.
+#
+#     Arguments:
+#         :param model: Pre-trained PyTorch model.
+#         :param image_path: Path to the input image.
+#         :param target_class: Index of the target class (optional). If None, uses the predicted class.
+#         :param transform: Optional image transformations.
+#         :param device: Device to be used ('cpu' or 'cuda').
+#
+#     Outputs:
+#         Displays and saves the visualization of Grad-CAM heatmap overlaid on the original image.
+#     """
+#
+#     # Load and preprocess the image
+#     image = Image.open(image_path)
+#     if transform:
+#         image = transform(image)
+#     image = image.to(device)
+#     image = image.unsqueeze(0)
+#
+#     # Set model to evaluation mode
+#     model.eval()
+#
+#     # Forward pass to get the final convolutional feature maps
+#     feature_maps = model.base_model(image)
+#
+#     # Get the predicted class (if target_class is None)
+#     if target_class is None:
+#         with torch.no_grad():
+#             output = model(image)
+#             target_class = torch.argmax(output, dim=1).item()
+#
+#     # Compute the gradient of the output class score with respect to the feature maps
+#     model.zero_grad()
+#     output = model(image)
+#     score = output[0, target_class]
+#     score.backward()
+#
+#     # Compute the importance of each feature map
+#     gradients = model.base_model.layer4[-1].conv2.weight.grad  # Grad-CAM for the last convolutional layer
+#     importance = torch.mean(gradients, dim=(2, 3), keepdim=True)
+#
+#     # Compute the weighted combination of the feature maps
+#     grad_cam = F.relu(torch.sum(importance * feature_maps, dim=1, keepdim=True))
+#
+#     # Normalize the Grad-CAM heatmap
+#     grad_cam = F.interpolate(grad_cam, size=image.shape[2:], mode='bilinear', align_corners=False)
+#     grad_cam -= grad_cam.min()
+#     grad_cam /= grad_cam.max()
+#
+#     # Convert Grad-CAM to numpy array
+#     grad_cam = grad_cam.detach().cpu().numpy()[0, 0]
+#
+#     # Overlay Grad-CAM heatmap on the original image
+#     heatmap = cv2.applyColorMap(np.uint8(255 * grad_cam), cv2.COLORMAP_JET)
+#     original_image = cv2.imread(image_path)
+#     original_image = cv2.resize(original_image, (600, 600))
+#
+#     overlayed_image = cv2.addWeighted(original_image, 0.5, heatmap, 0.5, 0)
+#
+#     # Display and save the overlayed image
+#     plt.figure(figsize=(10, 10))
+#     plt.imshow(cv2.cvtColor(overlayed_image, cv2.COLOR_BGR2RGB))
+#     plt.axis('off')
+#     plt.show()
 
 
 def calculator(x1, y1, x2, y2, w, h):
