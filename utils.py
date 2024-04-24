@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 import torch
-import torch.nn.functional as F
 from torch import nn
 
 
@@ -245,78 +244,6 @@ def grad_cam(model, image_path, image_size, transform=None, device="cpu"):
     return cam, input_image_np
 
 
-# def grad_cam(model, image_path, target_class=None, transform=None, device="cpu"):
-#     """
-#     Description:
-#         This function computes the Grad-CAM visualization of a given image using a pre-trained model.
-#         It takes an image path, applies transformations if provided, and computes the Grad-CAM heatmap
-#         overlaid on the original image.
-#
-#     Arguments:
-#         :param model: Pre-trained PyTorch model.
-#         :param image_path: Path to the input image.
-#         :param target_class: Index of the target class (optional). If None, uses the predicted class.
-#         :param transform: Optional image transformations.
-#         :param device: Device to be used ('cpu' or 'cuda').
-#
-#     Outputs:
-#         Displays and saves the visualization of Grad-CAM heatmap overlaid on the original image.
-#     """
-#
-#     # Load and preprocess the image
-#     image = Image.open(image_path)
-#     if transform:
-#         image = transform(image)
-#     image = image.to(device)
-#     image = image.unsqueeze(0)
-#
-#     # Set model to evaluation mode
-#     model.eval()
-#
-#     # Forward pass to get the final convolutional feature maps
-#     feature_maps = model.base_model(image)
-#
-#     # Get the predicted class (if target_class is None)
-#     if target_class is None:
-#         with torch.no_grad():
-#             output = model(image)
-#             target_class = torch.argmax(output, dim=1).item()
-#
-#     # Compute the gradient of the output class score with respect to the feature maps
-#     model.zero_grad()
-#     output = model(image)
-#     score = output[0, target_class]
-#     score.backward()
-#
-#     # Compute the importance of each feature map
-#     gradients = model.base_model.layer4[-1].conv2.weight.grad  # Grad-CAM for the last convolutional layer
-#     importance = torch.mean(gradients, dim=(2, 3), keepdim=True)
-#
-#     # Compute the weighted combination of the feature maps
-#     grad_cam = F.relu(torch.sum(importance * feature_maps, dim=1, keepdim=True))
-#
-#     # Normalize the Grad-CAM heatmap
-#     grad_cam = F.interpolate(grad_cam, size=image.shape[2:], mode='bilinear', align_corners=False)
-#     grad_cam -= grad_cam.min()
-#     grad_cam /= grad_cam.max()
-#
-#     # Convert Grad-CAM to numpy array
-#     grad_cam = grad_cam.detach().cpu().numpy()[0, 0]
-#
-#     # Overlay Grad-CAM heatmap on the original image
-#     heatmap = cv2.applyColorMap(np.uint8(255 * grad_cam), cv2.COLORMAP_JET)
-#     original_image = cv2.imread(image_path)
-#     original_image = cv2.resize(original_image, (600, 600))
-#
-#     overlayed_image = cv2.addWeighted(original_image, 0.5, heatmap, 0.5, 0)
-#
-#     # Display and save the overlayed image
-#     plt.figure(figsize=(10, 10))
-#     plt.imshow(cv2.cvtColor(overlayed_image, cv2.COLOR_BGR2RGB))
-#     plt.axis('off')
-#     plt.show()
-
-
 def calculator(x1, y1, x2, y2, w, h):
     # Calculate the slope and intercept of the line
     slope = (y2 - y1 + 1e-5) / (x2 - x1 + 1e-5)
@@ -362,33 +289,6 @@ def image_cropper(image):
         threshold=70,
         maxLineGap=10
     )
-
-    #    # Calculate the bounding rectangle coordinates
-    #     if lines is not None:
-    #         for line in lines:
-    #             x1, y1, x2, y2 = line[0]
-    #             cv2.line(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
-    #         x_left_values = [x1 for line in lines for x1, _, _, _ in line if x1<w//4]
-    #         x_right_values = [x1 for line in lines for x1, _, _, _ in line if x1>3*(w//4)]
-
-    #         y_up_values = [y1 for line in lines for _, y1, _, _ in line if y1<h//8]
-    #         y_down_values = [y1 for line in lines for _, y1, _, _ in line if y1>7*(h//8)]
-
-    #         x = y = 0
-    #         x_, y_ = w, h
-    #         if len(x_left_values) != 0:
-    #             x = max(x_left_values)
-    #         if len(x_right_values) != 0:
-    #             x_ = min(x_right_values)
-    #         if len(y_up_values) != 0:
-    #             y = min(y_up_values)
-    #         if len(y_down_values) != 0:
-    #             y_ = max(y_down_values)
-
-    #         cropped_image = image[h//2:y_, x:x_]
-    #         # cropped_image = histogram_equalization_color(cropped_image)
-
-    #         return image
 
     if lines is not None:
         left_lines = []
@@ -456,13 +356,3 @@ def histogram_equalization_color(image):
     equalized_image = cv2.merge([b_eq, g_eq, r_eq])
 
     return equalized_image
-
-# image = cv2.imread('Data\A\A_image_30.jpg')
-
-# # Apply the cropping function
-# cropped_img, image = image_cropper(image)
-
-# cv2.imshow('result',cropped_img)
-# cv2.imshow('Original', image)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows

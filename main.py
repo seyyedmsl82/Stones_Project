@@ -1,5 +1,6 @@
 # Import necessary libraries
 import matplotlib.pyplot as plt
+from PIL import Image
 import torch
 from torch import nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -14,6 +15,7 @@ from model import Net
 
 from pytorch_grad_cam import GradCAM, HiResCAM, ScoreCAM, GradCAMPlusPlus, AblationCAM, XGradCAM, EigenCAM, FullGrad
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+from pytorch_grad_cam.utils.image import show_cam_on_image
 
 
 # Set batch size and number of epochs
@@ -78,7 +80,27 @@ model = train(model,
               device,
               scheduler)
 
-# print(model.base_model.layer4[-1].conv2.weight.grad)
+image_ = Image.open('data/test/C_processed_image_15.jpg')
+image__ = transform(image_)
+image = image__.to(device)
+image = image.unsqueeze(0)
+print(model(image))
+target_layers = [model.base_model.layer4[-1]]
+cam = GradCAM(model=model, target_layers=target_layers)
+
+grayscale_cam = cam(input_tensor=image)
+
+
+# In this example grayscale_cam has only one image in the batch:
+grayscale_cam = grayscale_cam[0, :]
+# visualization = show_cam_on_image(image_, grayscale_cam, use_rgb=True)
+plt.imshow(grayscale_cam, cmap='jet')
+plt.colorbar()
+plt.show()
+plt.imshow(image__.numpy().transpose(1, 2, 0), cmap='jet')
+plt.show()
+# You can also get the model outputs without having to re-inference
+model_outputs = cam.outputs
 
 # # save the model
 # torch.save(model.state_dict(), "stone_model.pth")
