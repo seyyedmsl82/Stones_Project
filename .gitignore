@@ -1,7 +1,8 @@
+#dataset images
 data/
-.idea/
 
+#project specific settings
+.idea/
 
 # model
 ./model/stone_model.pth
-stone_model.pth

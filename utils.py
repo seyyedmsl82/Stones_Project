@@ -43,7 +43,7 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, c
         train_acc = 0.0
 
         model.train()  # Set the model to training mode
-        train_dataloader_with_progress = tqdm(train_dataloader, desc=f"Epoch {epoch}/{epochs}")
+        train_dataloader_with_progress = tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{epochs}")
 
         for i, (images, labels) in enumerate(train_dataloader_with_progress):
             images = images.to(device)
@@ -165,7 +165,6 @@ def feature_maps(model, image_path, transform=None, device="cpu"):
     image = transform(image)
     image = image.to(device)
     image = image.unsqueeze(0)
-    # output = model(image)
 
     # Choose the layer whose feature maps you want to visualize
     target_layer = model.base_model.conv1
@@ -184,7 +183,7 @@ def feature_maps(model, image_path, transform=None, device="cpu"):
         plt.imshow(activations[0, i, :, :], cmap='jet')
         plt.axis('off')
 
-    # plt.savefig("model/feature_maps.png")
+    plt.savefig("model/feature_maps.png")
     plt.show()
 
 
@@ -276,7 +275,7 @@ def image_cropper(image):
     # Define the contour
     contour = np.array([[w // 4, h // 8], [3 * (w // 4), h // 8], [3 * (w // 4), 7 * (h // 8)], [w // 4, 7 * (h // 8)]])
     mask = np.zeros_like(edges)
-    cv2.fillPoly(mask, np.int32([contour]), 255)
+    cv2.fillPoly(mask, np.uint8([contour]), 255)
     outside_mask = cv2.bitwise_not(mask)
 
     # Apply the outside_mask to the edges image to keep the portion outside the contour
@@ -302,7 +301,7 @@ def image_cropper(image):
             elif x1 < w // 4 and y1 < 7 * (h // 8):
                 left_lines.append(line)
 
-        x1_l = x2_l = 0
+        x1_l = 0
         x1_r = x2_r = w
         y_u = h // 2
         y_d = h
@@ -312,7 +311,6 @@ def image_cropper(image):
             x1, y1, x2, y2 = left_line_avg[0]
             x1, y1, x2, y2, slope, intercept = calculator(x1, y1, x2, y2, w, h)
             x1_l = int((h // 2 - intercept) // slope)
-            x2_l = int((h - intercept) // slope)
 
             # cv2.line(image, (x1_l, h//2), (x2_l, h), (0, 0, 255), 2)
 
