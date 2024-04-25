@@ -6,3 +6,4 @@ data/
 
 # model
 ./model/stone_model.pth
+stone_model.pth
