@@ -12,7 +12,7 @@ app = Flask(__name__)
 # Load the model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = neural_net.Net()
-checkpoint = torch.load("model/Stone_model.pth", map_location=device)
+checkpoint = torch.load("stone_model.pth", map_location=device)
 model.load_state_dict(checkpoint)
 model.to(device)
 model.eval()
