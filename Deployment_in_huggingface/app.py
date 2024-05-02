@@ -1,4 +1,4 @@
-import os
+import os, glob
 import cv2
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from PIL import Image
@@ -55,10 +55,14 @@ def predict(image_path):
     return classes[predicted_class]
 
 
+files = glob.glob('media/images/*')
 # Route to upload image and predict
 @app.route("/", methods=["GET", "POST"])
 def upload_image():
     if request.method == "POST":
+        for f in files:
+            os.remove(f)
+            
         if "file" not in request.files:
             return jsonify({"error": "No file part"})
 
