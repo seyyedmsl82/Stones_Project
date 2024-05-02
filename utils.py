@@ -275,7 +275,7 @@ def image_cropper(image):
     # Define the contour
     contour = np.array([[w // 4, h // 8], [3 * (w // 4), h // 8], [3 * (w // 4), 7 * (h // 8)], [w // 4, 7 * (h // 8)]])
     mask = np.zeros_like(edges)
-    cv2.fillPoly(mask, np.uint8([contour]), 255)
+    cv2.fillPoly(mask, np.int32([contour]), 255)
     outside_mask = cv2.bitwise_not(mask)
 
     # Apply the outside_mask to the edges image to keep the portion outside the contour
