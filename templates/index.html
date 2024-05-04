@@ -4,74 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Image</title>
-    <style>
-        /* Style for the image */
-        #intro-image {
-            width: 100%;
-            height: 100%;
-            position: fixed;
-            bottom: -100%;
-            left: 50%;
-            transform: translateX(-50%);
-            transition: bottom 2s ease-in-out;
-        }
-
-        /* Style for the container */
-        .container {
-            background-color: "none";
-            margin: auto;
-            position: relative;
-            width: 70%;
-            padding: 5%;
-            /* height: 500px; */
-            text-align: center;
-            font-size: larger;
-        }
-
-        form {
-            /* background-color: rgb(204, 204, 204); */
-            background-image: url('static/img/B_image_22_processed.jpg');
-            margin: auto;
-            text-align: center;
-            width: 80%;
-            height: 500px;
-            /* font-size: large; */
-        }
-
-        .button {
-            position: relative;
-            overflow: hidden;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            height: 2.5rem;
-            padding: 0 3rem;
-            font-family: inherit;
-            font-size: 1.25rem;
-            border: 0;
-            border-radius: 0.5rem;
-            /* background: transparent; */
-            background: #5d2fdf;
-            color: #f7f7f7;
-            cursor: pointer;
-            outline: none;
-            transition-property: background, box-shadow;
-            transition-duration: 0.35s;
-        }
-
-        .button.loading {
-            color: rgba(255, 255, 255, 0.5);
-            background: #5d2f;
-            background-image: 
-                repeating-linear-gradient(
-                    60deg,
-                    transparent,
-                    transparent 10px,
-                    #5526c5 10px,
-                    #5526c5 20px
-                );
-        }
-    </style>
+    <link rel="stylesheet" href="../static/css/style.css">
 </head>
 <body>
     <!-- Image to be shown as intro -->
@@ -98,7 +31,7 @@
         <br>
         <p>
             <h1>Upload Image</h1>
-            <input type="file" name="file" accept="image/*"  style="padding-left: 5%;">
+            <input type="file" name="file" accept="image/*">
         </p><br>
         <input class="button" id="upload_button" type="submit" value="Upload" onclick="showLoading()">
     </form>
