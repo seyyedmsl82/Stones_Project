@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Result</title>
+    <link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
     <h1>Result</h1>
-    <img src="{{ url_for('serve_file', path=image) }}" alt="Uploaded Image">
+    <img src="{{ url_for('serve_file', path=image) }}" alt="Uploaded Image" style="border-radius: 10px;">
     <p>Predicted Class: {{ prediction }}</p>
+    <p>Accuracy: %{{ accuracy }}</p>
 </body>
 </html>

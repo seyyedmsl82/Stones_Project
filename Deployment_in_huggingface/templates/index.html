@@ -4,40 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Image</title>
-    <style>
-        /* Style for the image */
-        #intro-image {
-            width: 100%;
-            height: 100%;
-            position: fixed;
-            bottom: -100%;
-            left: 50%;
-            transform: translateX(-50%);
-            transition: bottom 2s ease-in-out;
-        }
-
-        /* Style for the container */
-        .container {
-            background-color: "none";
-            margin: auto;
-            position: relative;
-            width: 70%;
-            padding: 5%;
-            /* height: 500px; */
-            text-align: center;
-            font-size: larger;
-        }
-
-        form {
-            /* background-color: rgb(204, 204, 204); */
-            background-image: url('static/img/B_image_22_processed.jpg');
-            margin: auto;
-            text-align: center;
-            width: 80%;
-            height: 500px;
-            /* font-size: large; */
-        }
-    </style>
+    <link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
     <!-- Image to be shown as intro -->
@@ -64,9 +31,9 @@
         <br>
         <p>
             <h1>Upload Image</h1>
-            <input type="file" name="file" accept="image/*"  style="padding-left: 5%;">
+            <input type="file" name="file" accept="image/*">
         </p><br>
-        <input type="submit" value="Upload">
+        <input class="button" id="upload_button" type="submit" value="Upload" onclick="showLoading()">
     </form>
 
     <script>
@@ -101,6 +68,13 @@
                 document.getElementById("my_form").reset();
             }, 3000); // 4000 milliseconds = 5 seconds
         }
+
+        // Function to apply loading style to button
+        function showLoading() {
+            var uploadButton = document.getElementById("upload_button");
+            uploadButton.classList.add("loading");
+        }
+
         // Call the showIntroImage function when the page loads
         window.onload = showIntroImage;
     </script>

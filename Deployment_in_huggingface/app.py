@@ -52,17 +52,17 @@ def predict(image_path):
     probability = torch.softmax(logits, dim=1)
     predicted_class = torch.argmax(probability, dim=1).item()
 
-    return classes[predicted_class]
+    return classes[predicted_class], probability.cpu().numpy()[0][torch.argmax(probability, dim=1).item()]
 
 
-files = glob.glob('media/images/*')
 # Route to upload image and predict
 @app.route("/", methods=["GET", "POST"])
 def upload_image():
+    files_ = glob.glob('media/images/*')
     if request.method == "POST":
-        for f in files:
+        for f in files_:
             os.remove(f)
-            
+
         if "file" not in request.files:
             return jsonify({"error": "No file part"})
 
@@ -79,12 +79,13 @@ def upload_image():
             file.save(filepath)
             selected_image = cv2.imread(filepath)
             processed_image = image_cropper(selected_image)
+            h, w = processed_image.shape[:2]
+            processed_image = cv2.resize(processed_image, (w//2, h//2))
             new_file_path = os.path.join(UPLOAD_FOLDER + "/images/", processes_filename)
             # print(processed_image)
             cv2.imwrite(new_file_path, processed_image)
-
-            predicted_class = predict(new_file_path)
-            return render_template("result.html", image=f"images/{processes_filename}", prediction=predicted_class)
+            predicted_class, accuracy = predict(new_file_path)
+            return render_template("result.html", image=f"images/{processes_filename}", prediction=predicted_class, accuracy=accuracy*100)
 
     return render_template("index.html")
 
