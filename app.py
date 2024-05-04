@@ -52,18 +52,22 @@ def predict(image_path):
     return classes[predicted_class]
 
 
-files = glob.glob('media/images/*')
+files_ = glob.glob('media/images/*')
 # Route to upload image and predict
 @app.route("/", methods=["GET", "POST"])
-def upload_image():
+def upload_image():  
     if request.method == "POST":
-        for f in files:
-            os.remove(f)
-            
         if "file" not in request.files:
             return jsonify({"error": "No file part"})
 
         file = request.files["file"]
+
+        for f in files_:
+            try:
+                if file.filename not in f:
+                    print("\n\n\n true") 
+                    os.remove(f)
+            except: continue
 
         if file.filename == "":
             return jsonify({"error": "No selected file"})
@@ -79,7 +83,6 @@ def upload_image():
             new_file_path = os.path.join(UPLOAD_FOLDER + "/images/", processes_filename)
             # print(processed_image)
             cv2.imwrite(new_file_path, processed_image)
-
             predicted_class = predict(new_file_path)
             return render_template("result.html", image=f"images/{processes_filename}", prediction=predicted_class)
 
