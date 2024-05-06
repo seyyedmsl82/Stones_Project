@@ -81,7 +81,7 @@ def gradcam(image):
     # Add a colorbar to show the intensity scale of the heatmap
     plt.colorbar()
 
-    plt.show()
+    # plt.show()
 
 
 # Route to upload image and predict
