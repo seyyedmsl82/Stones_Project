@@ -39,7 +39,7 @@ classes = {
 
 # Define image transformation
 transform = transforms.Compose([
-    transforms.Resize((512, 512)),
+    transforms.Resize((600, 600)),
     transforms.ToTensor()
 ])
 
@@ -50,11 +50,11 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 
-def predict(image_path):
+def predict(image_path, w, h):
     img_ = Image.open(image_path)
     img = transform(img_).to(device).unsqueeze(0)
     # Grad-CAM of the input image
-    gradcam(img)
+    gradcam(img, w, h)
 
     with torch.no_grad():
         logits = model(img)
@@ -65,7 +65,7 @@ def predict(image_path):
     return classes[predicted_class], probability.cpu().numpy()[0][torch.argmax(probability, dim=1).item()]
 
 
-def gradcam(image):
+def gradcam(image,w , h):
     grayscale_cam = cam(input_tensor=image)
 
 
@@ -75,13 +75,23 @@ def gradcam(image):
     # Overlay the heatmap on the original image
     plt.imshow(image.squeeze().cpu().numpy().transpose(1, 2, 0))
 
+    # Remove axis numbers
+    plt.xticks([])
+    plt.yticks([])
+
     # Overlay the heatmap with transparency
     plt.imshow(grayscale_cam, cmap='jet', alpha=0.5)
 
-    # Add a colorbar to show the intensity scale of the heatmap
-    plt.colorbar()
+    # # Add a colorbar to show the intensity scale of the heatmap
+    # plt.colorbar()
+    
+    plt.savefig("heatmap.png")
+    plt.show()
 
-    # plt.show()
+    img = cv2.imread("heatmap.png")
+    img = cv2.resize(img, (w, h))
+    cv2.imshow("heatmap", img)
+    cv2.waitKey(0)
 
 
 # Route to upload image and predict
@@ -115,10 +125,10 @@ def upload_image():
             cv2.imwrite(new_file_path, processed_image) # Save the procesed image
 
             # Predict the class of input image
-            predicted_class, accuracy = predict(new_file_path)
+            h, w = processed_image.shape[:2]
+            predicted_class, accuracy = predict(new_file_path, w, h)
 
             # Resize to have a better demonstration
-            h, w = processed_image.shape[:2]
             processed_image = cv2.resize(processed_image, (w//2, h//2))
             cv2.imwrite(new_file_path, processed_image) # Save the procesed image
 
