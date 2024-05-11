@@ -50,6 +50,19 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 
+UPLOAD_FOLDER_INPUTS = "uploads"
+app.config['UPLOAD_FOLDER_INPUTS'] = UPLOAD_FOLDER_INPUTS
+
+
+def save_to_local(file):
+    if not os.path.exists(app.config['UPLOAD_FOLDER_INPUTS']):
+        os.makedirs(app.config['UPLOAD_FOLDER_INPUTS'])
+    
+    file_path = os.path.join(app.config['UPLOAD_FOLDER_INPUTS'], file.filename)
+    file.save(file_path)
+    return file_path
+
+
 def predict(image_path, w, h):
     img_ = Image.open(image_path)
     img = transform(img_).to(device).unsqueeze(0)
@@ -143,6 +156,27 @@ def serve_file(path):
     return send_from_directory(
         directory=app.config["UPLOAD_FOLDER"], path=path
     )
+
+
+@app.route('/upload', method=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error':"Not file part"}), 400
+
+    file = request.files['file']
+
+    if file.filename == "":
+        return jsonify({'error':"Not selected file"}), 400
+
+
+    if file:
+        local_path = save_to_local(file)
+
+        return jsonify({
+            'local_path': local_path,
+        }), 200
+
+    return jsonify ({'error': 'something went wrong'}), 500
 
 
 if __name__ == "__main__":
