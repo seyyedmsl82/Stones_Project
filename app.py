@@ -168,6 +168,8 @@ def upload_file():
     if file.filename == "":
         return jsonify({'error':"Not selected file"}), 400
 
+    if file.filename[-3:] not in ("jpg", "png"):
+        return jsonify({'error':"File is not supported image"}), 400
 
     if file:
         local_path = save_to_local(file)
