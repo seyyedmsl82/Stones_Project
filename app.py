@@ -102,7 +102,7 @@ def gradcam(image,w , h):
     plt.show()
 
     img = cv2.imread("heatmap.png")
-    img = cv2.resize(img, (w, h))
+    img = cv2.resize(img, (int(w*3/2), int(h*3/2)))
     cv2.imshow("heatmap", img)
     cv2.waitKey(0)
 
@@ -158,7 +158,7 @@ def serve_file(path):
     )
 
 
-@app.route('/upload', method=['POST'])
+@app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
         return jsonify({'error':"Not file part"}), 400

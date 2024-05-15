@@ -36,6 +36,17 @@
         <input class="button" id="upload_button" type="submit" value="Upload" onclick="showLoading()">
     </form>
 
+    <br>
+
+    <form id="my_form" action="/upload" method="post" enctype="multipart/form-data">
+        <br>
+        <p>
+            <h1>Upload Image</h1>
+            <input type="file" name="file" accept="image/*">
+        </p><br>
+        <input class="button" id="upload_button" type="submit" value="Upload" onclick="showLoading()">
+    </form>
+
     <script>
         // Function to show the intro image from below
         function showIntroImage() {
