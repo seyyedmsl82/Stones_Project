@@ -110,6 +110,7 @@ def gradcam(image,w , h):
 # Route to upload image and predict
 @app.route("/", methods=["GET", "POST"])
 def upload_image():
+    message = "<br>"
     files_ = glob.glob('media/images/*')
     if request.method == "POST":
         for f in files_:
@@ -148,7 +149,7 @@ def upload_image():
             # Render template
             return render_template("result.html", image=f"images/{processes_filename}", prediction=predicted_class, accuracy=accuracy*100)
 
-    return render_template("index.html")
+    return render_template("index.html", message)
 
 
 @app.get("/media/<path:path>")
@@ -175,7 +176,7 @@ def upload_file():
         local_path = save_to_local(file)
 
         message = '<span style="color: red;">Thanks for your cooperation</span>'
-        return render_template("index.html")
+        return render_template("index.html", message)
 
     return jsonify ({'error': 'something went wrong'}), 500
 
