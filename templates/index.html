@@ -41,12 +41,16 @@
         <form id="form2" action="/upload" method="post" enctype="multipart/form-data">
             <p>
                 <h1>Add your Image to our database</h1>
-                <input type="file" name="file" accept="image/*">
+                <input type="file" name="file" accept="image/*"><br>
+                <input type="radio" name="classes" id="A" value="A"> A <br>
+                <input type="radio" name="classes" id="B" value="B"> B <br>
+                <input type="radio" name="classes" id="C" value="C"> C <br>
+                <input type="radio" name="classes" id="D" value="D"> D <br>
+                <input type="radio" name="classes" id="E" value="E"> E <br>
                 
                 <br>
                 <input class="button" id="upload_button" type="submit" value="Upload" onclick="showLoading()">
-                {{ message }}
-                
+
             </p>
         </form>
     </div>
@@ -92,6 +96,7 @@
                 document.body.style.backgroundColor = "#000";
                 container.style.backgroundImage = "url('static/img/B_image_22.jpg')";
                 document.getElementById("form1").reset();
+                document.getElementById("form2").reset();
             }, 3000); // 4000 milliseconds = 5 seconds
         }
 
