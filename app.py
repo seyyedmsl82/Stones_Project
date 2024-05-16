@@ -54,11 +54,11 @@ UPLOAD_FOLDER_INPUTS = "uploads"
 app.config['UPLOAD_FOLDER_INPUTS'] = UPLOAD_FOLDER_INPUTS
 
 
-def save_to_local(file):
+def save_to_local(file, class_type):
     if not os.path.exists(app.config['UPLOAD_FOLDER_INPUTS']):
         os.makedirs(app.config['UPLOAD_FOLDER_INPUTS'])
     
-    file_path = os.path.join(app.config['UPLOAD_FOLDER_INPUTS'], file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER_INPUTS'], f"{class_type}_{file.filename}")
     file.save(file_path)
     return file_path
 
@@ -110,7 +110,6 @@ def gradcam(image,w , h):
 # Route to upload image and predict
 @app.route("/", methods=["GET", "POST"])
 def upload_image():
-    message = "<br>"
     files_ = glob.glob('media/images/*')
     if request.method == "POST":
         for f in files_:
@@ -149,7 +148,7 @@ def upload_image():
             # Render template
             return render_template("result.html", image=f"images/{processes_filename}", prediction=predicted_class, accuracy=accuracy*100)
 
-    return render_template("index.html", message)
+    return render_template("index.html")
 
 
 @app.get("/media/<path:path>")
@@ -173,10 +172,11 @@ def upload_file():
         return jsonify({'error':"File is not supported image"}), 400
 
     if file:
-        local_path = save_to_local(file)
+        class_name = request.form['classes']
+        local_path = save_to_local(file, class_name)
 
-        message = '<span style="color: red;">Thanks for your cooperation</span>'
-        return render_template("index.html", message)
+        return render_template("greeting.html")
+        # upload_image()
 
     return jsonify ({'error': 'something went wrong'}), 500
 
