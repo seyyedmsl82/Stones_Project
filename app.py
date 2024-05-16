@@ -174,9 +174,8 @@ def upload_file():
     if file:
         local_path = save_to_local(file)
 
-        return jsonify({
-            'local_path': local_path,
-        }), 200
+        message = '<span style="color: red;">Thanks for your cooperation</span>'
+        return render_template("index.html")
 
     return jsonify ({'error': 'something went wrong'}), 500
 

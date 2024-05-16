@@ -27,25 +27,39 @@
 
     <br>
 
-    <form id="my_form" action="/" method="post" enctype="multipart/form-data">
-        <br>
-        <p>
-            <h1>Upload Image</h1>
-            <input type="file" name="file" accept="image/*">
-        </p><br>
-        <input class="button" id="upload_button" type="submit" value="Upload" onclick="showLoading()">
-    </form>
+    <div class="forms" id="my_form" >
+        <form id="form1" action="/" method="post" enctype="multipart/form-data">
+            <br>
+            <p>
+                <h1>Upload Image</h1>
+                <input type="file" name="file" accept="image/*">
+            
+                <br>
+                <input class="button" id="upload_button" type="submit" value="Upload" onclick="showLoading()">
+            </p>
+        </form>
+        <form id="form2" action="/upload" method="post" enctype="multipart/form-data">
+            <p>
+                <h1>Add your Image to our database</h1>
+                <input type="file" name="file" accept="image/*">
+                
+                <br>
+                <input class="button" id="upload_button" type="submit" value="Upload" onclick="showLoading()">
+                {{ message }}
+            </p>
+        </form>
+    </div>
 
     <br>
 
-    <form id="my_form" action="/upload" method="post" enctype="multipart/form-data">
+    <!-- <form id="my_form" action="/upload" method="post" enctype="multipart/form-data">
         <br>
         <p>
             <h1>Upload Image</h1>
             <input type="file" name="file" accept="image/*">
         </p><br>
         <input class="button" id="upload_button" type="submit" value="Upload" onclick="showLoading()">
-    </form>
+    </form> -->
 
     <script>
         // Function to show the intro image from below
@@ -59,7 +73,7 @@
                 element.style.display = "none";
             });
             document.querySelector("h1").style.display = "none"; // Hide the h1 element
-            document.querySelector("form").style.display = "none"; // Hide the form element
+            document.getElementById("my_form").style.display = "none"; // Hide the form element
 
             
             introImage.style.bottom = "300px"; // Move the image to the center
@@ -67,7 +81,7 @@
             setTimeout(function() {
                 introImage.style.display = "none"; // Hide the image
                 document.querySelector("h1").style.display = "block"; // Show the h1 element
-                document.querySelector("form").style.display = "block"; // Show the form element
+                document.getElementById("my_form").style.display = "block"; // Show the form element
                 containerElements.forEach(function(element) {
                     element.style.display = "block";
                 });
@@ -76,7 +90,7 @@
                 // container.style.backgroundColor = "rgb(204,204,204)"; // Change to desired color
                 document.body.style.backgroundColor = "#000";
                 container.style.backgroundImage = "url('static/img/B_image_22.jpg')";
-                document.getElementById("my_form").reset();
+                document.getElementById("form1").reset();
             }, 3000); // 4000 milliseconds = 5 seconds
         }
 
