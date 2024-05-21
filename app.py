@@ -10,6 +10,32 @@ from pytorch_grad_cam import GradCAM
 from model import neural_net
 from utils import image_cropper
 
+
+"""
+    trying to connect to google drive and download
+"""
+from googleapiclient.http import MediaFileUpload
+from Google import Create_Service
+
+CLIENT_SECRET_FILE = "client_secret.json"
+API_NAME = 'drive'
+API_VERSION = 'v3'
+SCOPES = ['https://www.googleapis.com/auth/drive']
+
+drive = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
+
+# Upload a file
+file_metadata = {'name': 'heatmap.png',
+                 'parents': ['1p9Pu90baLPX0qEs2jkeT6YC07iHIQ3JW']
+                 }  # a sample file
+
+media_content = MediaFileUpload('heatmap.png', mimetype='image/png')
+
+file = service.files().create(
+    body=file_metadata,
+    media_body=media_content,
+).execute()
+
 app = Flask(__name__)
 
 # Load the model
@@ -67,7 +93,7 @@ def predict(image_path, w, h):
     img_ = Image.open(image_path)
     img = transform(img_).to(device).unsqueeze(0)
     # Grad-CAM of the input image
-    gradcam(img, w, h)
+    grad_cam(img, w, h)
 
     with torch.no_grad():
         logits = model(img)
@@ -78,9 +104,8 @@ def predict(image_path, w, h):
     return classes[predicted_class], probability.cpu().numpy()[0][torch.argmax(probability, dim=1).item()]
 
 
-def gradcam(image,w , h):
+def grad_cam(image, w, h):
     grayscale_cam = cam(input_tensor=image)
-
 
     # In this example grayscale_cam has only one image in the batch:
     grayscale_cam = grayscale_cam[0, :]
@@ -135,7 +160,7 @@ def upload_image():
             selected_image = cv2.imread(filepath)
             processed_image = image_cropper(selected_image)
             new_file_path = os.path.join(UPLOAD_FOLDER + "/images/", processes_filename)
-            cv2.imwrite(new_file_path, processed_image) # Save the procesed image
+            cv2.imwrite(new_file_path, processed_image)  # Save the processed image
 
             # Predict the class of input image
             h, w = processed_image.shape[:2]
@@ -143,7 +168,7 @@ def upload_image():
 
             # Resize to have a better demonstration
             processed_image = cv2.resize(processed_image, (w//2, h//2))
-            cv2.imwrite(new_file_path, processed_image) # Save the procesed image
+            cv2.imwrite(new_file_path, processed_image)  # Save the processed image
 
             # Render template
             return render_template("result.html", image=f"images/{processes_filename}", prediction=predicted_class, accuracy=accuracy*100)
@@ -161,15 +186,15 @@ def serve_file(path):
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return jsonify({'error':"Not file part"}), 400
+        return jsonify({'error': "Not file part"}), 400
 
     file = request.files['file']
 
     if file.filename == "":
-        return jsonify({'error':"Not selected file"}), 400
+        return jsonify({'error': "Not selected file"}), 400
 
     if file.filename[-3:] not in ("jpg", "png"):
-        return jsonify({'error':"File is not supported image"}), 400
+        return jsonify({'error': "File is not supported image"}), 400
 
     if file:
         class_name = request.form['classes']
@@ -178,7 +203,7 @@ def upload_file():
         return render_template("greeting.html")
         # upload_image()
 
-    return jsonify ({'error': 'something went wrong'}), 500
+    return jsonify({'error': 'something went wrong'}), 500
 
 
 if __name__ == "__main__":
