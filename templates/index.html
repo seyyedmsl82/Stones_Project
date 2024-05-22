@@ -12,7 +12,7 @@
     <br>
     <div class="container">
         <br>
-        <b><h1 >Stone Classification Project</h1></b>
+        <b><h1>Stone Classification Project</h1></b>
         <i>
             <p>Marble, a metamorphic rock, is formed from the transformation of limestone or dolomite through heat and pressure deep within the earth's crust. 
             <!-- </p>
@@ -35,22 +35,21 @@
                 <input type="file" name="file" accept="image/*">
             
                 <br>
-                <input class="button" id="upload_button" type="submit" value="Upload" onclick="showLoading()">
+                <input class="button" id="upload_button1" type="submit" value="Upload" onclick="showLoading1()">
             </p>
         </form>
         <form id="form2" action="/upload" method="post" enctype="multipart/form-data">
             <p>
                 <h1>Add your Image to our database</h1>
                 <input type="file" name="file" accept="image/*"><br>
-                <input type="radio" name="classes" id="A" value="A"> A <br>
-                <input type="radio" name="classes" id="B" value="B"> B <br>
-                <input type="radio" name="classes" id="C" value="C"> C <br>
-                <input type="radio" name="classes" id="D" value="D"> D <br>
-                <input type="radio" name="classes" id="E" value="E"> E <br>
+                <input type="radio" name="classes" id="A" value="A"> A
+                <input type="radio" name="classes" id="B" value="B"> B
+                <input type="radio" name="classes" id="C" value="C"> C
+                <input type="radio" name="classes" id="D" value="D"> D
+                <input type="radio" name="classes" id="E" value="E"> E
                 
                 <br>
-                <input class="button" id="upload_button" type="submit" value="Upload" onclick="showLoading()">
-
+                <input class="button" id="upload_button2" type="submit" value="Upload" onclick="showLoading2()">
             </p>
         </form>
     </div>
@@ -101,7 +100,11 @@
         }
 
         // Function to apply loading style to button
-        function showLoading() {
+        function showLoading1() {
+            var uploadButton = document.getElementById("upload_button");
+            uploadButton.classList.add("loading");
+        }
+        function showLoading2() {
             var uploadButton = document.getElementById("upload_button");
             uploadButton.classList.add("loading");
         }
