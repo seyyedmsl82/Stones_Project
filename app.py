@@ -14,8 +14,15 @@ from utils import image_cropper
 """
     trying to connect to google drive and download
 """
-from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaIoBaseUpload
+from googleapiclient.discovery import build
 from Google import Create_Service
+import pickle
+import os.path
+from googleapiclient.discovery import build
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+import io
 
 CLIENT_SECRET_FILE = "client_secret.json"
 API_NAME = 'drive'
@@ -24,17 +31,28 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 
 drive = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
 
-# Upload a file
-file_metadata = {'name': 'heatmap.png',
-                 'parents': ['1p9Pu90baLPX0qEs2jkeT6YC07iHIQ3JW']
-                 }  # a sample file
+creds = None
+# The file token.pickle stores the user's access and refresh tokens, and is
+# created automatically when the authorization flow completes for the first
+# time.
+if os.path.exists('token.pickle'):
+    with open('token.pickle', 'rb') as token:
+        creds = pickle.load(token)
+# If there are no (valid) credentials available, let the user log in.
+if not creds or not creds.valid:
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+    else:
+        flow = InstalledAppFlow.from_client_secrets_file(
+            CLIENT_SECRET_FILE, SCOPES)
+        creds = flow.run_local_server()
+    # Save the credentials for the next run
+    with open('token.pickle', 'wb') as token:
+        pickle.dump(creds, token)
 
-media_content = MediaFileUpload('heatmap.png', mimetype='image/png')
+service = build('drive', 'v3', credentials=creds)
 
-file = service.files().create(
-    body=file_metadata,
-    media_body=media_content,
-).execute()
+########################################################################################################################
 
 app = Flask(__name__)
 
@@ -198,7 +216,22 @@ def upload_file():
 
     if file:
         class_name = request.form['classes']
-        local_path = save_to_local(file, class_name)
+        # Upload a file
+        file_metadata = {'name': f'{class_name}_{file.filename}',
+                         'parents': ['1p9Pu90baLPX0qEs2jkeT6YC07iHIQ3JW']
+                         }  # a sample file
+
+        buffer = io.BytesIO()
+        buffer.name = file.filename
+        file.save(buffer)
+
+        media_content = MediaIoBaseUpload(buffer, mimetype='image/jpg')
+
+        service.files().create(
+            body=file_metadata,
+            media_body=media_content,
+        ).execute()
+        # local_path = save_to_local(file, class_name)
 
         return render_template("greeting.html")
         # upload_image()
