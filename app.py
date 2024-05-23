@@ -1,43 +1,35 @@
-import os, glob
+import os
 import cv2
+import pickle
+import io
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from PIL import Image
 import torch
 from torchvision import transforms
 import matplotlib.pyplot as plt
 from pytorch_grad_cam import GradCAM
-# locals
-from model import neural_net
-from utils import image_cropper
-
-
-"""
-    trying to connect to google drive and download
-"""
-from googleapiclient.http import MediaIoBaseUpload
-from googleapiclient.discovery import build
-from Google import Create_Service
-import pickle
-import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
-import io
+from googleapiclient.http import MediaIoBaseUpload
+# locals
+from model import neural_net
+from utils import image_cropper
+from Google import Create_Service
 
+
+# Google Drive API setup
 CLIENT_SECRET_FILE = "client_secret.json"
 API_NAME = 'drive'
 API_VERSION = 'v3'
 SCOPES = ['https://www.googleapis.com/auth/drive']
-
 drive = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
 
 creds = None
-# The file token.pickle stores the user's access and refresh tokens, and is
-# created automatically when the authorization flow completes for the first
-# time.
 if os.path.exists('token.pickle'):
     with open('token.pickle', 'rb') as token:
         creds = pickle.load(token)
+
 # If there are no (valid) credentials available, let the user log in.
 if not creds or not creds.valid:
     if creds and creds.expired and creds.refresh_token:
@@ -46,13 +38,12 @@ if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_secrets_file(
             CLIENT_SECRET_FILE, SCOPES)
         creds = flow.run_local_server()
+
     # Save the credentials for the next run
     with open('token.pickle', 'wb') as token:
         pickle.dump(creds, token)
 
 service = build('drive', 'v3', credentials=creds)
-
-########################################################################################################################
 
 app = Flask(__name__)
 
@@ -94,14 +85,10 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 
-UPLOAD_FOLDER_INPUTS = "uploads"
-app.config['UPLOAD_FOLDER_INPUTS'] = UPLOAD_FOLDER_INPUTS
-
-
 def save_to_local(file, class_type):
     if not os.path.exists(app.config['UPLOAD_FOLDER_INPUTS']):
         os.makedirs(app.config['UPLOAD_FOLDER_INPUTS'])
-    
+
     file_path = os.path.join(app.config['UPLOAD_FOLDER_INPUTS'], f"{class_type}_{file.filename}")
     file.save(file_path)
     return file_path
@@ -140,12 +127,12 @@ def grad_cam(image, w, h):
 
     # # Add a colorbar to show the intensity scale of the heatmap
     # plt.colorbar()
-    
+
     plt.savefig("heatmap.png")
     plt.show()
 
     img = cv2.imread("heatmap.png")
-    img = cv2.resize(img, (int(w*3/2), int(h*3/2)))
+    img = cv2.resize(img, (int(w * 3 / 2), int(h * 3 / 2)))
     cv2.imshow("heatmap", img)
     cv2.waitKey(0)
 
@@ -169,7 +156,7 @@ def upload_image():
         if file:
             filename = file.filename
             processes_filename = f"{filename.split('.')[0]}_processed.jpg"
-            
+
             # Save the input image in a temporary path
             filepath = os.path.join(UPLOAD_FOLDER + "/images/", filename)
             file.save(filepath)
@@ -185,11 +172,12 @@ def upload_image():
             predicted_class, accuracy = predict(new_file_path, w, h)
 
             # Resize to have a better demonstration
-            processed_image = cv2.resize(processed_image, (w//2, h//2))
+            processed_image = cv2.resize(processed_image, (w // 2, h // 2))
             cv2.imwrite(new_file_path, processed_image)  # Save the processed image
 
             # Render template
-            return render_template("result.html", image=f"images/{processes_filename}", prediction=predicted_class, accuracy=accuracy*100)
+            return render_template("result.html", image=f"images/{processes_filename}", prediction=predicted_class,
+                                   accuracy=accuracy * 100)
 
     return render_template("index.html")
 
@@ -219,7 +207,7 @@ def upload_file():
         # Upload a file
         file_metadata = {'name': f'{class_name}_{file.filename}',
                          'parents': ['1p9Pu90baLPX0qEs2jkeT6YC07iHIQ3JW']
-                         }  # a sample file
+                         }
 
         buffer = io.BytesIO()
         buffer.name = file.filename
@@ -231,10 +219,8 @@ def upload_file():
             body=file_metadata,
             media_body=media_content,
         ).execute()
-        # local_path = save_to_local(file, class_name)
 
         return render_template("greeting.html")
-        # upload_image()
 
     return jsonify({'error': 'something went wrong'}), 500
 
