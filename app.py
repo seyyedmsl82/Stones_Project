@@ -1,4 +1,4 @@
-import os
+import os, glob
 import cv2
 import pickle
 import io
@@ -97,8 +97,8 @@ def save_to_local(file, class_type):
 def predict(image_path, w, h):
     img_ = Image.open(image_path)
     img = transform(img_).to(device).unsqueeze(0)
-    # Grad-CAM of the input image
-    grad_cam(img, w, h)
+    # # Grad-CAM of the input image
+    # grad_cam(img, w, h)
 
     with torch.no_grad():
         logits = model(img)
