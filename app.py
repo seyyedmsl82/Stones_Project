@@ -227,3 +227,32 @@ def upload_file():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+# @app.route('/authorize')
+# def authorize():
+#     flow = Flow.from_client_secrets_file(
+#         CLIENT_SECRET_FILE,
+#         scopes=SCOPES,
+#         redirect_uri=url_for('oauth2callback', _external=True)
+#     )
+#     authorization_url, state = flow.authorization_url()
+#     session['state'] = state
+#     return redirect(authorization_url)
+#
+# @app.route('/oauth2callback')
+# def oauth2callback():
+#     state = session['state']
+#     flow = Flow.from_client_secrets_file(
+#         CLIENT_SECRET_FILE,
+#         scopes=SCOPES,
+#         state=state,
+#         redirect_uri=url_for('oauth2callback', _external=True)
+#     )
+#     flow.fetch_token(authorization_response=request.url)
+#     credentials = flow.credentials
+#
+#     with open('token_drive_v3.pickle', 'wb') as token:
+#         pickle.dump(credentials, token)
+#
+#     return redirect(url_for('index'))
+
