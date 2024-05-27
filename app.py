@@ -228,6 +228,48 @@ def upload_file():
 if __name__ == "__main__":
     app.run(debug=True)
 
+
+# try:
+#     os.remove('token.pickle')
+#     os.remove('token_drive_v3.pickle')
+#
+# except:
+#     pass
+#
+# os.environ['SENTENCE_TRANSFORMERS_HOME'] = './.cache'
+#
+#
+# # Flask app setup
+# app = Flask(__name__)
+# app.secret_key = '1234567890987654321'
+# UPLOAD_FOLDER = 'media'
+# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+#
+# if not os.path.exists(UPLOAD_FOLDER):
+#     os.makedirs(UPLOAD_FOLDER)
+#
+# # Google Drive API setup
+# CLIENT_SECRET_FILE = "client_secret.json"
+# API_NAME = 'drive'
+# API_VERSION = 'v3'
+# SCOPES = ['https://www.googleapis.com/auth/drive']
+#
+# def get_drive_service():
+#     credentials = None
+#     pickle_file = 'token_drive_v3.pickle'
+#     if os.path.exists(pickle_file):
+#         with open(pickle_file, 'rb') as token:
+#             credentials = pickle.load(token)
+#
+#     if not credentials or not credentials.valid:
+#         if credentials and credentials.expired and credentials.refresh_token:
+#             credentials.refresh(Request())
+#         else:
+#             return redirect(url_for('authorize'))
+#
+#     service = build(API_NAME, API_VERSION, credentials=credentials)
+#     return service
+
 # @app.route('/authorize')
 # def authorize():
 #     flow = Flow.from_client_secrets_file(
