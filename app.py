@@ -401,3 +401,48 @@ if __name__ == "__main__":
 #     return send_from_directory(
 #         directory=app.config["UPLOAD_FOLDER"], path=path
 #     )
+
+
+# @app.route('/upload', methods=['POST'])
+# def upload_file():
+#     if 'file' not in request.files:
+#         return jsonify({'error': "No file part"}), 400
+#
+#     file = request.files['file']
+#
+#     if file.filename == "":
+#         return jsonify({'error': "No selected file"}), 400
+#
+#     if file.filename[-3:] not in ("jpg", "png"):
+#         return jsonify({'error': "File is not supported image"}), 400
+#
+#     if file:
+#         class_name = request.form['classes']
+#         file_metadata = {'name': f'{class_name}_{file.filename}',
+#                          'parents': ['1p9Pu90baLPX0qEs2jkeT6YC07iHIQ3JW']
+#                          }
+#
+#         buffer = io.BytesIO()
+#         buffer.name = file.filename
+#         file.save(buffer)
+#         buffer.seek(0)
+#
+#         media_content = MediaIoBaseUpload(buffer, mimetype='image/jpg')
+#
+#         service = get_drive_service()
+#         if not service:
+#             return redirect(url_for('authorize'))
+#
+#         service.files().create(
+#             body=file_metadata,
+#             media_body=media_content,
+#         ).execute()
+#
+#         return render_template("greeting.html")
+#
+#     return jsonify({'error': 'something went wrong'}), 500
+#
+# if __name__ == "__main__":
+#     app.run(debug=True)
+#
+#
