@@ -229,6 +229,26 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 
+# import os
+# import glob
+# import cv2
+# import pickle
+# import io
+# from flask import Flask, request, jsonify, render_template, send_from_directory, redirect, url_for, session
+# from PIL import Image
+# import torch
+# from torchvision import transforms
+# from googleapiclient.discovery import build
+# from google_auth_oauthlib.flow import Flow
+# from google.auth.transport.requests import Request
+# from googleapiclient.http import MediaIoBaseUpload
+#
+# # locals
+# from model import neural_net
+# from utils import image_cropper
+# # from GradCAM import GradCAM
+#
+#
 # try:
 #     os.remove('token.pickle')
 #     os.remove('token_drive_v3.pickle')
@@ -269,7 +289,7 @@ if __name__ == "__main__":
 #
 #     service = build(API_NAME, API_VERSION, credentials=credentials)
 #     return service
-
+#
 # @app.route('/authorize')
 # def authorize():
 #     flow = Flow.from_client_secrets_file(
@@ -297,4 +317,87 @@ if __name__ == "__main__":
 #         pickle.dump(credentials, token)
 #
 #     return redirect(url_for('index'))
-
+#
+#
+# # Load the model
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# model = neural_net.Net()
+# model.unfreeze_layer('layer4.1.conv2.weight')
+# model.unfreeze_layer('layer4.1.conv2.bias')
+#
+# checkpoint = torch.load("model/stone_model.pth", map_location=device)
+# model.load_state_dict(checkpoint)
+# model.to(device)
+# model.eval()
+#
+# target_layers = [model.base_model.layer4[-1]]
+# # cam = GradCAM(model=model, target_layers=target_layers)
+#
+# classes = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
+#
+# transform = transforms.Compose([
+#     transforms.Resize((600, 600)),
+#     transforms.ToTensor()
+# ])
+#
+# def predict(image_path, w, h):
+#     img_ = Image.open(image_path)
+#     img = transform(img_).to(device).unsqueeze(0)
+#
+#     with torch.no_grad():
+#         logits = model(img)
+#
+#     probability = torch.softmax(logits, dim=1)
+#     predicted_class = torch.argmax(probability, dim=1).item()
+#
+#     return classes[predicted_class], probability.cpu().numpy()[0][torch.argmax(probability, dim=1).item()]
+#
+# # Route to upload image and predict
+# @app.route("/", methods=["GET", "POST"])
+# def upload_image():
+#     files_ = glob.glob('media/images/*')
+#     if request.method == "POST":
+#         for f in files_:
+#             os.remove(f)
+#
+#         if "file" not in request.files:
+#             return jsonify({"error": "No file part"})
+#
+#         file = request.files["file"]
+#
+#         if file.filename == "":
+#             return jsonify({"error": "No selected file"})
+#
+#         if file:
+#             filename = file.filename
+#             processes_filename = f"{filename.split('.')[0]}_processed.jpg"
+#
+#             # Save the input image in a temporary path
+#             filepath = os.path.join(UPLOAD_FOLDER + "/images/", filename)
+#             file.save(filepath)
+#
+#             # Process the image
+#             selected_image = cv2.imread(filepath)
+#             processed_image = image_cropper(selected_image)
+#             new_file_path = os.path.join(UPLOAD_FOLDER + "/images/", processes_filename)
+#             cv2.imwrite(new_file_path, processed_image)  # Save the processed image
+#
+#             # Predict the class of input image
+#             h, w = processed_image.shape[:2]
+#             predicted_class, accuracy = predict(new_file_path, w, h)
+#
+#             # Resize to have a better demonstration
+#             processed_image = cv2.resize(processed_image, (w // 2, h // 2))
+#             cv2.imwrite(new_file_path, processed_image)  # Save the processed image
+#
+#             # Render template
+#             return render_template("result.html", image=f"images/{processes_filename}", prediction=predicted_class,
+#                                    accuracy=accuracy * 100)
+#
+#     return render_template("index.html")
+#
+# @app.get("/media/<path:path>")
+# def serve_file(path):
+#     return send_from_directory(
+#         directory=app.config["UPLOAD_FOLDER"], path=path
+#     )
