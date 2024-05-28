@@ -228,221 +228,116 @@ def upload_file():
 if __name__ == "__main__":
     app.run(debug=True)
 
-
 # import os
-# import glob
-# import cv2
-# import pickle
-# import io
-# from flask import Flask, request, jsonify, render_template, send_from_directory, redirect, url_for, session
-# from PIL import Image
-# import torch
-# from torchvision import transforms
-# from googleapiclient.discovery import build
-# from google_auth_oauthlib.flow import Flow
-# from google.auth.transport.requests import Request
-# from googleapiclient.http import MediaIoBaseUpload
+# import flask
+# import httplib2
+# from apiclient import discovery
+# from apiclient.http import MediaIoBaseDownload, MediaFileUpload
+# from oauth2client import client
+# from oauth2client import tools
+# from oauth2client.file import Storage
 #
-# # locals
-# from model import neural_net
-# from utils import image_cropper
-# # from GradCAM import GradCAM
+# app = flask.Flask(__name__)
 #
 #
-# try:
-#     os.remove('token.pickle')
-#     os.remove('token_drive_v3.pickle')
+# @app.route('/')
+# def index():
+#     credentials = get_credentials()
+#     if credentials == False:
+#         return flask.redirect(flask.url_for('oauth2callback'))
+#     elif credentials.access_token_expired:
+#         return flask.redirect(flask.url_for('oauth2callback'))
+#     else:
+#         print('now calling fetch')
+#         all_files = fetch("'root' in parents and mimeType = 'application/vnd.google-apps.folder'",
+#                           sort='modifiedTime desc')
+#         s = ""
+#         for file in all_files:
+#             s += "%s, %s<br>" % (file['name'], file['id'])
+#         return s
 #
-# except:
-#     pass
-#
-# os.environ['SENTENCE_TRANSFORMERS_HOME'] = './.cache'
-#
-#
-# # Flask app setup
-# app = Flask(__name__)
-# app.secret_key = '1234567890987654321'
-# UPLOAD_FOLDER = 'media'
-# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-#
-# if not os.path.exists(UPLOAD_FOLDER):
-#     os.makedirs(UPLOAD_FOLDER)
-#
-# # Google Drive API setup
-# CLIENT_SECRET_FILE = "client_secret.json"
-# API_NAME = 'drive'
-# API_VERSION = 'v3'
-# SCOPES = ['https://www.googleapis.com/auth/drive']
-#
-# def get_drive_service():
-#     credentials = None
-#     pickle_file = 'token_drive_v3.pickle'
-#     if os.path.exists(pickle_file):
-#         with open(pickle_file, 'rb') as token:
-#             credentials = pickle.load(token)
-#
-#     if not credentials or not credentials.valid:
-#         if credentials and credentials.expired and credentials.refresh_token:
-#             credentials.refresh(Request())
-#         else:
-#             return redirect(url_for('authorize'))
-#
-#     service = build(API_NAME, API_VERSION, credentials=credentials)
-#     return service
-#
-# @app.route('/authorize')
-# def authorize():
-#     flow = Flow.from_client_secrets_file(
-#         CLIENT_SECRET_FILE,
-#         scopes=SCOPES,
-#         redirect_uri=url_for('oauth2callback', _external=True)
-#     )
-#     authorization_url, state = flow.authorization_url()
-#     session['state'] = state
-#     return redirect(authorization_url)
 #
 # @app.route('/oauth2callback')
 # def oauth2callback():
-#     state = session['state']
-#     flow = Flow.from_client_secrets_file(
-#         CLIENT_SECRET_FILE,
-#         scopes=SCOPES,
-#         state=state,
-#         redirect_uri=url_for('oauth2callback', _external=True)
-#     )
-#     flow.fetch_token(authorization_response=request.url)
-#     credentials = flow.credentials
+#     flow = client.flow_from_clientsecrets('client_id.json',
+#                                           scope='https://www.googleapis.com/auth/drive',
+#                                           redirect_uri=flask.url_for('oauth2callback',
+#                                                                      _external=True))  # access drive api using developer credentials
+#     flow.params['include_granted_scopes'] = 'true'
+#     if 'code' not in flask.request.args:
+#         auth_uri = flow.step1_get_authorize_url()
+#         return flask.redirect(auth_uri)
+#     else:
+#         auth_code = flask.request.args.get('code')
+#         credentials = flow.step2_exchange(auth_code)
+#         open('credentials.json', 'w').write(credentials.to_json())  # write access token to credentials.json locally
+#         return flask.redirect(flask.url_for('index'))
 #
-#     with open('token_drive_v3.pickle', 'wb') as token:
-#         pickle.dump(credentials, token)
 #
-#     return redirect(url_for('index'))
+# def get_credentials():
+#     credential_path = 'credentials.json'
+#
+#     store = Storage(credential_path)
+#     credentials = store.get()
+#     if not credentials or credentials.invalid:
+#         print("Credentials not found.")
+#         return False
+#     else:
+#         print("Credentials fetched successfully.")
+#         return credentials
 #
 #
-# # Load the model
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# model = neural_net.Net()
-# model.unfreeze_layer('layer4.1.conv2.weight')
-# model.unfreeze_layer('layer4.1.conv2.bias')
+# def fetch(query, sort='modifiedTime desc'):
+#     credentials = get_credentials()
+#     http = credentials.authorize(httplib2.Http())
+#     service = discovery.build('drive', 'v3', http=http)
+#     results = service.files().list(
+#         q=query, orderBy=sort, pageSize=10, fields="nextPageToken, files(id, name)").execute()
+#     items = results.get('files', [])
+#     return items
 #
-# checkpoint = torch.load("model/stone_model.pth", map_location=device)
-# model.load_state_dict(checkpoint)
-# model.to(device)
-# model.eval()
 #
-# target_layers = [model.base_model.layer4[-1]]
-# # cam = GradCAM(model=model, target_layers=target_layers)
+# def download_file(file_id, output_file):
+#     credentials = get_credentials()
+#     http = credentials.authorize(httplib2.Http())
+#     service = discovery.build('drive', 'v3', http=http)
+#     # file_id = '0BwwA4oUTeiV1UVNwOHItT0xfa2M'
+#     request = service.files().export_media(fileId=file_id,
+#                                            mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+#     # request = service.files().get_media(fileId=file_id)
 #
-# classes = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
+#     fh = open(output_file, 'wb')  # io.BytesIO()
+#     downloader = MediaIoBaseDownload(fh, request)
+#     done = False
+#     while done is False:
+#         status, done = downloader.next_chunk()
+#     # print ("Download %d%%." % int(status.progress() * 100))
+#     fh.close()
 #
-# transform = transforms.Compose([
-#     transforms.Resize((600, 600)),
-#     transforms.ToTensor()
-# ])
 #
-# def predict(image_path, w, h):
-#     img_ = Image.open(image_path)
-#     img = transform(img_).to(device).unsqueeze(0)
+# # return fh
 #
-#     with torch.no_grad():
-#         logits = model(img)
+# def update_file(file_id, local_file):
+#     credentials = get_credentials()
+#     http = credentials.authorize(httplib2.Http())
+#     service = discovery.build('drive', 'v3', http=http)
+#     # First retrieve the file from the API.
+#     file = service.files().get(fileId=file_id).execute()
+#     # File's new content.
+#     media_body = MediaFileUpload(local_file, resumable=True)
+#     # Send the request to the API.
+#     updated_file = service.files().update(
+#         fileId=file_id,
+#         # body=file,
+#         # newRevision=True,
+#         media_body=media_body).execute()
 #
-#     probability = torch.softmax(logits, dim=1)
-#     predicted_class = torch.argmax(probability, dim=1).item()
 #
-#     return classes[predicted_class], probability.cpu().numpy()[0][torch.argmax(probability, dim=1).item()]
+# if __name__ == '__main__':
+#     if os.path.exists('client_id.json') == False:
+#         print('Client secrets file (client_id.json) not found in the app path.')
+#         exit()
+#     import uuid
 #
-# # Route to upload image and predict
-# @app.route("/", methods=["GET", "POST"])
-# def upload_image():
-#     files_ = glob.glob('media/images/*')
-#     if request.method == "POST":
-#         for f in files_:
-#             os.remove(f)
-#
-#         if "file" not in request.files:
-#             return jsonify({"error": "No file part"})
-#
-#         file = request.files["file"]
-#
-#         if file.filename == "":
-#             return jsonify({"error": "No selected file"})
-#
-#         if file:
-#             filename = file.filename
-#             processes_filename = f"{filename.split('.')[0]}_processed.jpg"
-#
-#             # Save the input image in a temporary path
-#             filepath = os.path.join(UPLOAD_FOLDER + "/images/", filename)
-#             file.save(filepath)
-#
-#             # Process the image
-#             selected_image = cv2.imread(filepath)
-#             processed_image = image_cropper(selected_image)
-#             new_file_path = os.path.join(UPLOAD_FOLDER + "/images/", processes_filename)
-#             cv2.imwrite(new_file_path, processed_image)  # Save the processed image
-#
-#             # Predict the class of input image
-#             h, w = processed_image.shape[:2]
-#             predicted_class, accuracy = predict(new_file_path, w, h)
-#
-#             # Resize to have a better demonstration
-#             processed_image = cv2.resize(processed_image, (w // 2, h // 2))
-#             cv2.imwrite(new_file_path, processed_image)  # Save the processed image
-#
-#             # Render template
-#             return render_template("result.html", image=f"images/{processes_filename}", prediction=predicted_class,
-#                                    accuracy=accuracy * 100)
-#
-#     return render_template("index.html")
-#
-# @app.get("/media/<path:path>")
-# def serve_file(path):
-#     return send_from_directory(
-#         directory=app.config["UPLOAD_FOLDER"], path=path
-#     )
-
-
-# @app.route('/upload', methods=['POST'])
-# def upload_file():
-#     if 'file' not in request.files:
-#         return jsonify({'error': "No file part"}), 400
-#
-#     file = request.files['file']
-#
-#     if file.filename == "":
-#         return jsonify({'error': "No selected file"}), 400
-#
-#     if file.filename[-3:] not in ("jpg", "png"):
-#         return jsonify({'error': "File is not supported image"}), 400
-#
-#     if file:
-#         class_name = request.form['classes']
-#         file_metadata = {'name': f'{class_name}_{file.filename}',
-#                          'parents': ['1p9Pu90baLPX0qEs2jkeT6YC07iHIQ3JW']
-#                          }
-#
-#         buffer = io.BytesIO()
-#         buffer.name = file.filename
-#         file.save(buffer)
-#         buffer.seek(0)
-#
-#         media_content = MediaIoBaseUpload(buffer, mimetype='image/jpg')
-#
-#         service = get_drive_service()
-#         if not service:
-#             return redirect(url_for('authorize'))
-#
-#         service.files().create(
-#             body=file_metadata,
-#             media_body=media_content,
-#         ).execute()
-#
-#         return render_template("greeting.html")
-#
-#     return jsonify({'error': 'something went wrong'}), 500
-#
-# if __name__ == "__main__":
+#     app.secret_key = str(uuid.uuid4())
 #     app.run(debug=True)
-#
-#
