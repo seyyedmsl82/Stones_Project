@@ -8,42 +8,61 @@ import torch
 from torchvision import transforms
 import matplotlib.pyplot as plt
 from pytorch_grad_cam import GradCAM
+import googleapiclient
 from googleapiclient.discovery import build
+import google
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.http import MediaIoBaseUpload
+from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from googleapiclient.http import MediaFileUpload
+
 # locals
 from model import neural_net
 from utils import image_cropper
-from Google import Create_Service
 
+# # Google Drive API setup
+# CLIENT_SECRET_FILE = "client_secret.json"
+# API_NAME = 'drive'
+# API_VERSION = 'v3'
+# SCOPES = ['https://www.googleapis.com/auth/drive']
+# drive = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
+#
+# creds = None
+# if os.path.exists('token.pickle'):
+#     with open('token.pickle', 'rb') as token:
+#         creds = pickle.load(token)
+#
+# # If there are no (valid) credentials available, let the user log in.
+# if not creds or not creds.valid:
+#     if creds and creds.expired and creds.refresh_token:
+#         creds.refresh(Request())
+#     else:
+#         flow = InstalledAppFlow.from_client_secrets_file(
+#             CLIENT_SECRET_FILE, SCOPES)
+#         creds = flow.run_local_server()
+#
+#     # Save the credentials for the next run
+#     with open('token.pickle', 'wb') as token:
+#         pickle.dump(creds, token)
+#
+# service = build('drive', 'v3', credentials=creds)
 
-# Google Drive API setup
-CLIENT_SECRET_FILE = "client_secret.json"
-API_NAME = 'drive'
-API_VERSION = 'v3'
-SCOPES = ['https://www.googleapis.com/auth/drive']
-drive = Create_Service(CLIENT_SECRET_FILE, API_NAME, API_VERSION, SCOPES)
+CLIENT_ID = '142857969907-2f0geqqrfn8ius4lk9bv2jvlmbgrrki6.apps.googleusercontent.com'
+CLIENT_SECRET = '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'
+REFRESH_TOKEN = '1//04fecKoDh9AQvCgYIARAAGAQSNwF-L9Iry5hDY_hMzfXaqsb9-PqbMwqCABrAELOi87dkHzBCXAY0Wn2T8j0dlCxYk4Eme9YlWQA'
 
-creds = None
-if os.path.exists('token.pickle'):
-    with open('token.pickle', 'rb') as token:
-        creds = pickle.load(token)
+# Load credentials from refresh token
+creds = Credentials(None,
+                    refresh_token=REFRESH_TOKEN,
+                    client_id=CLIENT_ID,
+                    client_secret=CLIENT_SECRET,
+                    token_uri='https://oauth2.googleapis.com/token')
 
-# If there are no (valid) credentials available, let the user log in.
-if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-    else:
-        flow = InstalledAppFlow.from_client_secrets_file(
-            CLIENT_SECRET_FILE, SCOPES)
-        creds = flow.run_local_server()
+# Initialize the Drive API client
+drive_service = build('drive', 'v3', credentials=creds)
 
-    # Save the credentials for the next run
-    with open('token.pickle', 'wb') as token:
-        pickle.dump(creds, token)
-
-service = build('drive', 'v3', credentials=creds)
 
 app = Flask(__name__)
 
@@ -61,7 +80,7 @@ model.eval()
 
 # Set the target layer for grad-cam
 target_layers = [model.base_model.layer4[-1]]
-cam = GradCAM(model=model, target_layers=target_layers)
+# cam = GradCAM(model=model, target_layers=target_layers)
 
 # Define class labels
 classes = {
@@ -94,6 +113,21 @@ def save_to_local(file, class_type):
     return file_path
 
 
+def upload_file(file_path):
+    try:
+        file_metadata = {'name': 'image.jpg'}
+        media = MediaFileUpload(file_path, mimetype='image/jpg')
+        response = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id'
+        ).execute()
+        print('File ID:', response.get('id'))
+    except Exception as error:
+        print(f'An error occurred: {error}')
+
+
+
 def predict(image_path, w, h):
     img_ = Image.open(image_path)
     img = transform(img_).to(device).unsqueeze(0)
@@ -105,36 +139,39 @@ def predict(image_path, w, h):
 
     probability = torch.softmax(logits, dim=1)
     predicted_class = torch.argmax(probability, dim=1).item()
+    accuracy = probability.cpu().numpy()[0][torch.argmax(probability, dim=1).item()]
+    accuracy = float("{:.4f}".format(accuracy))
+    print(float(accuracy))
 
-    return classes[predicted_class], probability.cpu().numpy()[0][torch.argmax(probability, dim=1).item()]
+    return classes[predicted_class], accuracy
 
 
-def grad_cam(image, w, h):
-    grayscale_cam = cam(input_tensor=image)
-
-    # In this example grayscale_cam has only one image in the batch:
-    grayscale_cam = grayscale_cam[0, :]
-
-    # Overlay the heatmap on the original image
-    plt.imshow(image.squeeze().cpu().numpy().transpose(1, 2, 0))
-
-    # Remove axis numbers
-    plt.xticks([])
-    plt.yticks([])
-
-    # Overlay the heatmap with transparency
-    plt.imshow(grayscale_cam, cmap='jet', alpha=0.5)
-
-    # # Add a colorbar to show the intensity scale of the heatmap
-    # plt.colorbar()
-
-    plt.savefig("heatmap.png")
-    plt.show()
-
-    img = cv2.imread("heatmap.png")
-    img = cv2.resize(img, (int(w * 3 / 2), int(h * 3 / 2)))
-    cv2.imshow("heatmap", img)
-    cv2.waitKey(0)
+# def grad_cam(image, w, h):
+#     grayscale_cam = cam(input_tensor=image)
+#
+#     # In this example grayscale_cam has only one image in the batch:
+#     grayscale_cam = grayscale_cam[0, :]
+#
+#     # Overlay the heatmap on the original image
+#     plt.imshow(image.squeeze().cpu().numpy().transpose(1, 2, 0))
+#
+#     # Remove axis numbers
+#     plt.xticks([])
+#     plt.yticks([])
+#
+#     # Overlay the heatmap with transparency
+#     plt.imshow(grayscale_cam, cmap='jet', alpha=0.5)
+#
+#     # # Add a colorbar to show the intensity scale of the heatmap
+#     # plt.colorbar()
+#
+#     plt.savefig("heatmap.png")
+#     plt.show()
+#
+#     img = cv2.imread("heatmap.png")
+#     img = cv2.resize(img, (int(w * 3 / 2), int(h * 3 / 2)))
+#     cv2.imshow("heatmap", img)
+#     cv2.waitKey(0)
 
 
 # Route to upload image and predict
@@ -203,141 +240,36 @@ def upload_file():
         return jsonify({'error': "File is not supported image"}), 400
 
     if file:
-        class_name = request.form['classes']
-        # Upload a file
-        file_metadata = {'name': f'{class_name}_{file.filename}',
-                         'parents': ['1p9Pu90baLPX0qEs2jkeT6YC07iHIQ3JW']
-                         }
+        try:
+            class_name = request.form['classes']
 
-        buffer = io.BytesIO()
-        buffer.name = file.filename
-        file.save(buffer)
+            # Upload a file
+            file_metadata = {'name': f'{class_name}_{file.filename}',
+                             'parents': ['1p9Pu90baLPX0qEs2jkeT6YC07iHIQ3JW']
+                             }
 
-        media_content = MediaIoBaseUpload(buffer, mimetype='image/jpg')
+            buffer = io.BytesIO()
+            buffer.name = file.filename
+            file.save(buffer)
 
-        service.files().create(
-            body=file_metadata,
-            media_body=media_content,
-        ).execute()
+            media_content = MediaIoBaseUpload(buffer, mimetype='image/jpg')
 
-        return render_template("greeting.html")
+            response = drive_service.files().create(
+                body=file_metadata,
+                media_body=media_content,
+                fields='id'
+            ).execute()
+            print('File ID:', response.get('id'))
+
+
+
+            return render_template("greeting.html")
+
+        except Exception as error:
+            print(f'An error occurred: {error}')
 
     return jsonify({'error': 'something went wrong'}), 500
 
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-# import os
-# import flask
-# import httplib2
-# from apiclient import discovery
-# from apiclient.http import MediaIoBaseDownload, MediaFileUpload
-# from oauth2client import client
-# from oauth2client import tools
-# from oauth2client.file import Storage
-#
-# app = flask.Flask(__name__)
-#
-#
-# @app.route('/')
-# def index():
-#     credentials = get_credentials()
-#     if credentials == False:
-#         return flask.redirect(flask.url_for('oauth2callback'))
-#     elif credentials.access_token_expired:
-#         return flask.redirect(flask.url_for('oauth2callback'))
-#     else:
-#         print('now calling fetch')
-#         all_files = fetch("'root' in parents and mimeType = 'application/vnd.google-apps.folder'",
-#                           sort='modifiedTime desc')
-#         s = ""
-#         for file in all_files:
-#             s += "%s, %s<br>" % (file['name'], file['id'])
-#         return s
-#
-#
-# @app.route('/oauth2callback')
-# def oauth2callback():
-#     flow = client.flow_from_clientsecrets('client_id.json',
-#                                           scope='https://www.googleapis.com/auth/drive',
-#                                           redirect_uri=flask.url_for('oauth2callback',
-#                                                                      _external=True))  # access drive api using developer credentials
-#     flow.params['include_granted_scopes'] = 'true'
-#     if 'code' not in flask.request.args:
-#         auth_uri = flow.step1_get_authorize_url()
-#         return flask.redirect(auth_uri)
-#     else:
-#         auth_code = flask.request.args.get('code')
-#         credentials = flow.step2_exchange(auth_code)
-#         open('credentials.json', 'w').write(credentials.to_json())  # write access token to credentials.json locally
-#         return flask.redirect(flask.url_for('index'))
-#
-#
-# def get_credentials():
-#     credential_path = 'credentials.json'
-#
-#     store = Storage(credential_path)
-#     credentials = store.get()
-#     if not credentials or credentials.invalid:
-#         print("Credentials not found.")
-#         return False
-#     else:
-#         print("Credentials fetched successfully.")
-#         return credentials
-#
-#
-# def fetch(query, sort='modifiedTime desc'):
-#     credentials = get_credentials()
-#     http = credentials.authorize(httplib2.Http())
-#     service = discovery.build('drive', 'v3', http=http)
-#     results = service.files().list(
-#         q=query, orderBy=sort, pageSize=10, fields="nextPageToken, files(id, name)").execute()
-#     items = results.get('files', [])
-#     return items
-#
-#
-# def download_file(file_id, output_file):
-#     credentials = get_credentials()
-#     http = credentials.authorize(httplib2.Http())
-#     service = discovery.build('drive', 'v3', http=http)
-#     # file_id = '0BwwA4oUTeiV1UVNwOHItT0xfa2M'
-#     request = service.files().export_media(fileId=file_id,
-#                                            mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-#     # request = service.files().get_media(fileId=file_id)
-#
-#     fh = open(output_file, 'wb')  # io.BytesIO()
-#     downloader = MediaIoBaseDownload(fh, request)
-#     done = False
-#     while done is False:
-#         status, done = downloader.next_chunk()
-#     # print ("Download %d%%." % int(status.progress() * 100))
-#     fh.close()
-#
-#
-# # return fh
-#
-# def update_file(file_id, local_file):
-#     credentials = get_credentials()
-#     http = credentials.authorize(httplib2.Http())
-#     service = discovery.build('drive', 'v3', http=http)
-#     # First retrieve the file from the API.
-#     file = service.files().get(fileId=file_id).execute()
-#     # File's new content.
-#     media_body = MediaFileUpload(local_file, resumable=True)
-#     # Send the request to the API.
-#     updated_file = service.files().update(
-#         fileId=file_id,
-#         # body=file,
-#         # newRevision=True,
-#         media_body=media_body).execute()
-#
-#
-# if __name__ == '__main__':
-#     if os.path.exists('client_id.json') == False:
-#         print('Client secrets file (client_id.json) not found in the app path.')
-#         exit()
-#     import uuid
-#
-#     app.secret_key = str(uuid.uuid4())
-#     app.run(debug=True)
