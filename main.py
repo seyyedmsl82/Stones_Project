@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 from pytorch_grad_cam import GradCAM
 # locals
 from dataset import StoneDataset
-from utils import feature_maps, train
+from utils import feature_maps, train, grad_cam
 from model import Net
 
 
@@ -25,9 +25,10 @@ device = ("cuda" if torch.cuda.is_available() else "cpu")
 
 # Define image augmentation and transformation
 train_transform = transforms.Compose([
-    transforms.Resize(image_size),
+    transforms.Resize((700, 700)),
     transforms.RandomHorizontalFlip(),  # Randomly flip the image horizontally
     transforms.RandomRotation(15),  # Randomly rotate the image by up to 15 degrees
+    transforms.RandomCrop(600),
     transforms.ToTensor()
 ])
 
@@ -76,35 +77,16 @@ model = train(model,
               device,
               scheduler)
 
-image = Image.open('data/test/C_processed_image_15.jpg')
-image = transform(image)
-image = image.to(device)
-image = image.unsqueeze(0)
-
-target_layers = [model.base_model.layer4[-1]]
-cam = GradCAM(model=model, target_layers=target_layers)
-
-grayscale_cam = cam(input_tensor=image)
-
-
-# In this example grayscale_cam has only one image in the batch:
-grayscale_cam = grayscale_cam[0, :]
-
-# Overlay the heatmap on the original image
-plt.imshow(image.squeeze().cpu().numpy().transpose(1, 2, 0))
-
-# Overlay the heatmap with transparency
-plt.imshow(grayscale_cam, cmap='jet', alpha=0.5)
-
-# Add a colorbar to show the intensity scale of the heatmap
-plt.colorbar()
-
-plt.savefig("model/heatmap.png")
-plt.show()
 
 # save the model
 torch.save(model.state_dict(), "stone_model.pth")
 
-feature_maps(model,
-             'data/test/C_processed_image_15.jpg',
-             transform=transform, device=device)
+# # GradCam Operation
+# target_layers = [model.base_model.layer4[-1]]
+# cam = GradCAM(model=model, target_layers=target_layers)
+
+grad_cam(model, image_path='data/train/B_processed_image_1.jpg', transform=transform, device=device)
+
+# feature_maps(model,
+#              'data/train/B_processed_image_1.jpg',
+#              transform=transform, device=device)
