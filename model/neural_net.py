@@ -86,10 +86,6 @@ class Net(nn.Module):
 
     def forward(self, x):
         x = self.base_model(x)
-
-        # x = x.unsqueeze(2).unsqueeze(3)  # Add dummy height and width dimensions
-        # x = self.additional_conv(x)
-        # x = self.relu(x)
         x = self.dropout1(x)
 
         x = torch.flatten(x, 1)
