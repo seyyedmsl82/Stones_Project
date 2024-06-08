@@ -1,4 +1,3 @@
-# Import necessary libraries
 import cv2
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -6,6 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import torch
 from torch import nn
+from pytorch_grad_cam import GradCAM
 
 
 def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, criterion, epochs, device, scheduler):
@@ -187,7 +187,7 @@ def feature_maps(model, image_path, transform=None, device="cpu"):
     plt.show()
 
 
-def grad_cam(model, image_path, image_size, transform=None, device="cpu"):
+def grad_cam(model, image_path, transform=None, device="cpu"):
     """
     Description:
         This function computes the Gradient-weighted Class Activation Mapping (Grad-CAM) for a
@@ -199,7 +199,6 @@ def grad_cam(model, image_path, image_size, transform=None, device="cpu"):
     Arguments:
         :param model: Pre-trained PyTorch model.
         :param image_path: Path to the input image.
-        :param image_size: Size of the input image.
         :param transform: Optional image transformations
         :param device: Device to be used ('cpu', 'cuda')
 
@@ -211,39 +210,46 @@ def grad_cam(model, image_path, image_size, transform=None, device="cpu"):
 
     # set the model to evaluation mode
     model.eval()
+
+    # Unfreeze the desired layer
+    model.unfreeze_layer('layer4.1.conv2.weight')
+    model.unfreeze_layer('layer4.1.conv2.bias')
+
+    # GradCam Operation
+    target_layers = [model.base_model.layer4[-1]]
+    cam = GradCAM(model=model, target_layers=target_layers)
+
     img_ = Image.open(image_path)
     img = transform(img_).unsqueeze(0)
     img = img.to(device)
 
-    logits = model(img)
-    pred = torch.argmax(logits, dim=1)
+    grayscale_cam = cam(input_tensor=img)
 
-    # Compute the gradients of the predicted class output with respect to the activations of the target layer
-    model.zero_grad()
-    logits[:, pred].backward()
+    grayscale_cam = grayscale_cam[0, :]
 
-    # Get the activations of the layer
-    gradients = model.base_model.layer4[-1].conv2.weight.grad
+    # Overlay the heatmap on the original image
+    plt.imshow(img.squeeze().cpu().numpy().transpose(1, 2, 0))
 
-    # Compute the gradient-weighted class activation map (CAM)
-    cam = torch.mean(gradients, dim=(2, 3))  # Global average pooling along spatial dimensions
-    cam = nn.functional.relu(cam)
-    cam = cam.detach().cpu().numpy()[0]  # Convert to numpy array
+    # Overlay the heatmap with transparency
+    plt.imshow(grayscale_cam, cmap='jet', alpha=0.5)
 
-    # # Normalize the CAM
-    cam = (cam - np.min(cam)) / (np.max(cam) - np.min(cam) + 1e-10)
+    # Add a colorbar to show the intensity scale of the heatmap
+    plt.colorbar()
 
-    # Resize the CAM to match the input image size
-    cam = np.uint8(255 * cam)
-    cam = np.uint8(Image.fromarray(cam).resize(image_size, Image.Resampling.LANCZOS))
-
-    # Convert the input image to a numpy array
-    input_image_np = img.squeeze().cpu().numpy().transpose(1, 2, 0)
-
-    return cam, input_image_np
+    plt.show()
 
 
 def calculator(x1, y1, x2, y2, w, h):
+    """
+
+    :param x1:
+    :param y1:
+    :param x2:
+    :param y2:
+    :param w:
+    :param h:
+    :return:
+    """
     # Calculate the slope and intercept of the line
     slope = (y2 - y1 + 1e-5) / (x2 - x1 + 1e-5)
     intercept = y1 - slope * x1
@@ -259,6 +265,11 @@ def calculator(x1, y1, x2, y2, w, h):
 
 
 def image_cropper(image):
+    """
+
+    :param image:
+    :return:
+    """
     h, w = image.shape[:2]
     w, h = w // 6, h // 6
     image = cv2.resize(image, (w, h))
@@ -342,6 +353,11 @@ def image_cropper(image):
 
 
 def histogram_equalization_color(image):
+    """
+
+    :param image:
+    :return:
+    """
     # Split the color image into individual channels
     b, g, r = cv2.split(image)
 
