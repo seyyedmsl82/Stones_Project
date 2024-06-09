@@ -1,61 +1,61 @@
 Epoch: 1/20,
-                    Train Loss: 1.5244, Train Accuracy: 34.83,
-                    Val Loss: 1.4333, Val Accuracy: 58.82 
+                    Train Loss: 1.4560, Train Accuracy: 35.50,
+                    Val Loss: 1.3067, Val Accuracy: 52.94 
 Epoch: 2/20,
-                    Train Loss: 1.0299, Train Accuracy: 68.17,
-                    Val Loss: 1.1007, Val Accuracy: 64.71 
+                    Train Loss: 0.9436, Train Accuracy: 73.00,
+                    Val Loss: 1.2737, Val Accuracy: 41.18 
 Epoch: 3/20,
-                    Train Loss: 0.8401, Train Accuracy: 76.83,
-                    Val Loss: 0.8110, Val Accuracy: 70.59 
+                    Train Loss: 0.7954, Train Accuracy: 74.83,
+                    Val Loss: 1.1199, Val Accuracy: 52.94 
 Epoch: 4/20,
-                    Train Loss: 0.6101, Train Accuracy: 87.83,
-                    Val Loss: 0.6147, Val Accuracy: 70.59 
+                    Train Loss: 0.5371, Train Accuracy: 90.33,
+                    Val Loss: 0.9376, Val Accuracy: 82.35 
 Epoch: 5/20,
-                    Train Loss: 0.5167, Train Accuracy: 88.50,
-                    Val Loss: 0.4735, Val Accuracy: 76.47 
+                    Train Loss: 0.4179, Train Accuracy: 94.67,
+                    Val Loss: 0.8493, Val Accuracy: 70.59 
 Epoch: 6/20,
-                    Train Loss: 0.3383, Train Accuracy: 96.50,
-                    Val Loss: 0.3755, Val Accuracy: 94.12 
+                    Train Loss: 0.2990, Train Accuracy: 98.67,
+                    Val Loss: 0.6609, Val Accuracy: 70.59 
 Epoch: 7/20,
-                    Train Loss: 0.3156, Train Accuracy: 96.67,
-                    Val Loss: 0.2912, Val Accuracy: 94.12 
+                    Train Loss: 0.2387, Train Accuracy: 98.67,
+                    Val Loss: 0.4963, Val Accuracy: 76.47 
 Epoch: 8/20,
-                    Train Loss: 0.2230, Train Accuracy: 98.33,
-                    Val Loss: 0.2473, Val Accuracy: 94.12 
+                    Train Loss: 0.1801, Train Accuracy: 99.33,
+                    Val Loss: 0.3249, Val Accuracy: 88.24 
 Epoch: 9/20,
-                    Train Loss: 0.1677, Train Accuracy: 99.33,
-                    Val Loss: 0.2298, Val Accuracy: 94.12 
+                    Train Loss: 0.1430, Train Accuracy: 100.00,
+                    Val Loss: 0.2050, Val Accuracy: 100.00 
 Epoch: 10/20,
-                    Train Loss: 0.1411, Train Accuracy: 100.00,
-                    Val Loss: 0.1728, Val Accuracy: 94.12 
+                    Train Loss: 0.1395, Train Accuracy: 100.00,
+                    Val Loss: 0.1442, Val Accuracy: 100.00 
 Epoch: 11/20,
-                    Train Loss: 0.1155, Train Accuracy: 100.00,
-                    Val Loss: 0.1505, Val Accuracy: 100.00 
+                    Train Loss: 0.1515, Train Accuracy: 99.17,
+                    Val Loss: 0.1066, Val Accuracy: 100.00 
 Epoch: 12/20,
-                    Train Loss: 0.1068, Train Accuracy: 100.00,
-                    Val Loss: 0.1349, Val Accuracy: 100.00 
+                    Train Loss: 0.0863, Train Accuracy: 100.00,
+                    Val Loss: 0.1113, Val Accuracy: 100.00 
 Epoch: 13/20,
-                    Train Loss: 0.0809, Train Accuracy: 100.00,
-                    Val Loss: 0.1138, Val Accuracy: 100.00 
+                    Train Loss: 0.0738, Train Accuracy: 100.00,
+                    Val Loss: 0.1181, Val Accuracy: 100.00 
 Epoch: 14/20,
-                    Train Loss: 0.0788, Train Accuracy: 100.00,
-                    Val Loss: 0.0891, Val Accuracy: 100.00 
+                    Train Loss: 0.0784, Train Accuracy: 100.00,
+                    Val Loss: 0.1211, Val Accuracy: 94.12 
 Epoch: 15/20,
-                    Train Loss: 0.0657, Train Accuracy: 100.00,
-                    Val Loss: 0.0634, Val Accuracy: 100.00 
+                    Train Loss: 0.0656, Train Accuracy: 100.00,
+                    Val Loss: 0.1154, Val Accuracy: 100.00 
 Epoch: 16/20,
-                    Train Loss: 0.0550, Train Accuracy: 100.00,
-                    Val Loss: 0.0576, Val Accuracy: 100.00 
+                    Train Loss: 0.0651, Train Accuracy: 100.00,
+                    Val Loss: 0.1178, Val Accuracy: 100.00 
 Epoch: 17/20,
-                    Train Loss: 0.0525, Train Accuracy: 100.00,
-                    Val Loss: 0.0541, Val Accuracy: 100.00 
+                    Train Loss: 0.0688, Train Accuracy: 100.00,
+                    Val Loss: 0.1191, Val Accuracy: 100.00 
 Epoch: 18/20,
-                    Train Loss: 0.0504, Train Accuracy: 100.00,
-                    Val Loss: 0.0542, Val Accuracy: 100.00 
+                    Train Loss: 0.0584, Train Accuracy: 100.00,
+                    Val Loss: 0.1216, Val Accuracy: 100.00 
 Epoch: 19/20,
-                    Train Loss: 0.0352, Train Accuracy: 100.00,
-                    Val Loss: 0.0579, Val Accuracy: 100.00 
+                    Train Loss: 0.0607, Train Accuracy: 100.00,
+                    Val Loss: 0.1286, Val Accuracy: 94.12 
 Epoch: 20/20,
-                    Train Loss: 0.0538, Train Accuracy: 99.17,
-                    Val Loss: 0.0585, Val Accuracy: 100.00 
-Test Accuracy: 100.00
+                    Train Loss: 0.0561, Train Accuracy: 100.00,
+                    Val Loss: 0.1317, Val Accuracy: 94.12 
+Test Accuracy: 95.12
