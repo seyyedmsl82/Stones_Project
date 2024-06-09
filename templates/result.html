@@ -8,8 +8,10 @@
 </head>
 <body>
     <h1>Result</h1>
-    <img src="{{ url_for('serve_file', path=image) }}" alt="Uploaded Image" style="border-radius: 25px;">
-    <p>Predicted Class: {{ prediction }}</p>
-    <p>Accuracy: %{{ accuracy }}</p>
+    <img src="{{ url_for('serve_file', path=image1) }}" alt="Processed Uploaded Image" style=" margin-right: 20px; border-radius: 25px;">
+    <img src="{{ url_for('serve_file', path=image2) }}" alt="Uploaded Image" style="border-radius: 25px;">
+    <p style="font-size: large"><b> Predicted Class: </b> {{ prediction }}</p>
+    <p style="font-size: large"><b> Accuracy: </b> %{{ accuracy }}</p>
+<br>
 </body>
 </html>
