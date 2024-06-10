@@ -1,5 +1,6 @@
 import os
 import glob
+from time import time
 import cv2
 import io
 from flask import Flask, request, jsonify, render_template, send_from_directory
@@ -17,9 +18,10 @@ from googleapiclient.http import MediaFileUpload
 from model import neural_net
 from utils import image_cropper, grad_cam
 
+
 CLIENT_ID = '142857969907-2f0geqqrfn8ius4lk9bv2jvlmbgrrki6.apps.googleusercontent.com'
 CLIENT_SECRET = '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'
-REFRESH_TOKEN = '1//04fecKoDh9AQvCgYIARAAGAQSNwF-L9Iry5hDY_hMzfXaqsb9-PqbMwqCABrAELOi87dkHzBCXAY0Wn2T8j0dlCxYk4Eme9YlWQA'
+REFRESH_TOKEN = '1//04ubQD-CvEjQtCgYIARAAGAQSNwF-L9IryjbIl8h0WGT7bmdlDdZDc7pB1AZC1A0h3UxMksvD3jDNj4PlARH-X7pMFX_AR-2OsNs'
 
 # Load credentials from refresh token
 creds = Credentials(None,
@@ -81,8 +83,8 @@ def upload_file(file_path):
 def predict(image_path, w, h):
     img_ = Image.open(image_path)
     img = transform(img_).to(device).unsqueeze(0)
-    # Grad-CAM of the input image
-    grad_cam(model, image_path=image_path, transform=transform, device=device)
+    # # Grad-CAM of the input image
+    # grad_cam(model, image_path=image_path, transform=transform, device=device)
 
     with torch.no_grad():
         logits = model(img)
@@ -102,7 +104,10 @@ def upload_image():
     files_ = glob.glob('media/images/*')
     if request.method == "POST":
         for f in files_:
-            os.remove(f)
+            ti = os.path.getatime(f)
+            tc = time()
+            if tc - ti >= 300.0:  # after 5 min of upload an image
+                os.remove(f)
 
         if "file" not in request.files:
             return jsonify({"error": "No file part"})
@@ -132,8 +137,9 @@ def upload_image():
 
             # Resize to have a better demonstration
             h_, w_ = selected_image.shape[:2]
-            w_ = w_ // (h_ // 600)
-            h_ =  600
+            if h_ > 600:
+                w_ //= h_ // 600
+                h_ = 600
             selected_image = cv2.resize(selected_image, (w_, h_))
             processed_image = cv2.resize(processed_image, ((w_ * h) // h_, h_))
             cv2.imwrite(new_file_path, processed_image)  # Save the processed image
