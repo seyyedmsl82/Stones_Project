@@ -21,7 +21,7 @@ from utils import image_cropper, grad_cam
 
 CLIENT_ID = '142857969907-2f0geqqrfn8ius4lk9bv2jvlmbgrrki6.apps.googleusercontent.com'
 CLIENT_SECRET = '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'
-REFRESH_TOKEN = '1//04ubQD-CvEjQtCgYIARAAGAQSNwF-L9IryjbIl8h0WGT7bmdlDdZDc7pB1AZC1A0h3UxMksvD3jDNj4PlARH-X7pMFX_AR-2OsNs'
+REFRESH_TOKEN = '1//04371Rfl2TnF4CgYIARAAGAQSNwF-L9IrXo-EHSSC3pe_FzJRQgGtP48-jUcJ8TFj6B8wDlz1soBKPMJJjSQshCI8UX2ZzXICaQs'
 
 # Load credentials from refresh token
 creds = Credentials(None,
