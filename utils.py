@@ -11,25 +11,21 @@ from pytorch_grad_cam import GradCAM
 def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, criterion, epochs, device, scheduler):
     """
     Description:
-        This function trains a given PyTorch model using the provided training and validation dataloaders,
-        for a specified number of epochs. It also evaluates the model on a test dataloader after training.
-        It logs the training and validation loss and accuracy for each epoch in a text file named "training_log.txt".
-
+        Trains a given PyTorch model using the provided training, validation, and test dataloaders.
 
     Arguments:
-        :param model: The PyTorch model to be trained.
-        :param train_dataloader: Dataloader for the training dataset.
-        :param val_dataloader: Dataloader for the validation dataset.
-        :param test_dataloader: Dataloader for the test dataset.
-        :param optimizer: Optimizer used for training the model.
-        :param criterion: Loss function used for calculating the loss.
-        :param epochs: Number of epochs for training.
-        :param device: Device to be used for training ('cpu' or 'cuda').
-        :param scheduler: Learning rate scheduler.
+        model (torch.nn.Module): The PyTorch model to be trained.
+        train_dataloader (torch.utils.data.DataLoader): Dataloader for the training dataset.
+        val_dataloader (torch.utils.data.DataLoader): Dataloader for the validation dataset.
+        test_dataloader (torch.utils.data.DataLoader): Dataloader for the test dataset.
+        optimizer (torch.optim.Optimizer): Optimizer used for training the model.
+        criterion (torch.nn.Module): Loss function used for calculating the loss.
+        epochs (int): Number of epochs for training.
+        device (str): Device to be used for training ('cpu' or 'cuda').
+        scheduler (torch.optim.lr_scheduler._LRScheduler): Learning rate scheduler.
 
-
-    Outputs:
-        :return: The trained PyTorch model.
+    Returns:
+        torch.nn.Module: The trained PyTorch model.
     """
 
     train_losses = []
@@ -144,21 +140,17 @@ def train(model, train_dataloader, val_dataloader, test_dataloader, optimizer, c
 def feature_maps(model, image_path, transform=None, device="cpu"):
     """
     Description:
-        This function visualizes the feature maps of a given image using a pre-trained model.
-        It takes an image path, applies transformations if provided, and extracts feature maps
-        from a specified layer of the model. It then visualizes the feature maps using matplotlib
-        and saves the visualization as "feature_maps.png".
+        Visualizes the feature maps of a given image using a pre-trained model.
 
 
     Arguments:
-        :param model: Pre-trained PyTorch model.
-        :param image_path: Path to the input image.
-        :param transform: Optional image transformations.
-        :param device: Device to be used ('cpu' or 'cuda').
+        model (torch.nn.Module): Pre-trained PyTorch model.
+        image_path (str): Path to the input image.
+        transform (callable, optional): Optional image transformations.
+        device (str): Device to be used ('cpu' or 'cuda').
 
 
-    Outputs:
-        Displays and saves the visualization of feature maps.
+    Displays and saves the visualization of feature maps.
     """
 
     image = Image.open(image_path)
@@ -197,15 +189,15 @@ def grad_cam(model, image_path, transform=None, device="cpu"):
 
 
     Arguments:
-        :param model: Pre-trained PyTorch model.
-        :param image_path: Path to the input image.
-        :param transform: Optional image transformations
-        :param device: Device to be used ('cpu', 'cuda')
+        model (torch.nn.Module): Pre-trained PyTorch model.
+        image_path (str): Path to the input image.
+        transform (callable, optional): Optional image transformations.
+        device (str): Device to be used ('cpu', 'cuda').
 
 
-    Outputs:
-        cam: Gradient-weighted Class Activation Map (CAM) as a NumPy array.
-        img: Input image as a NumPy array.
+    Returns:
+        cam (np.ndarray): Gradient-weighted Class Activation Map (CAM) as a NumPy array.
+        img (np.ndarray): Input image as a NumPy array.
     """
 
     # set the model to evaluation mode
@@ -241,15 +233,23 @@ def grad_cam(model, image_path, transform=None, device="cpu"):
 
 def calculator(x1, y1, x2, y2, w, h):
     """
+    Description:
+        Calculates the slope and intercept of a line and adjusts the line coordinates based on the image dimensions.
 
-    :param x1:
-    :param y1:
-    :param x2:
-    :param y2:
-    :param w:
-    :param h:
-    :return:
+
+    Arguments:
+        x1 (int): X-coordinate of the first point.
+        y1 (int): Y-coordinate of the first point.
+        x2 (int): X-coordinate of the second point.
+        y2 (int): Y-coordinate of the second point.
+        w (int): Width of the image.
+        h (int): Height of the image.
+
+
+    Returns:
+        tuple: Adjusted coordinates (x1, y1, x2, y2) and the slope and intercept of the line.
     """
+
     # Calculate the slope and intercept of the line
     slope = (y2 - y1 + 1e-5) / (x2 - x1 + 1e-5)
     intercept = y1 - slope * x1
@@ -354,10 +354,18 @@ def image_cropper(image):
 
 def histogram_equalization_color(image):
     """
+    Description:
+        Crops and processes an image to emphasize specific regions of interest.
 
-    :param image:
-    :return:
+
+    Arguments:
+        image (np.ndarray): Input image.
+
+
+    Returns:
+        np.ndarray: Processed image.
     """
+
     # Split the color image into individual channels
     b, g, r = cv2.split(image)
 
