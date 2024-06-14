@@ -9,26 +9,19 @@ class Net(nn.Module):
     """
     Description:
         This class defines a neural network model called Net using the PyTorch framework. The model
-        architecture consists of a pre-trained ResNet-50 backbone followed by additional layers for
-        feature extraction and classification. The ResNet-50 backbone is initialized with pre-trained
+        architecture consists of a pre-trained ResNet-18 backbone followed by additional layers for
+        feature extraction and classification. The ResNet-18 backbone is initialized with pre-trained
         ImageNet weights, and its parameters are frozen to prevent backpropagation during training.
-        The additional layers include a convolutional layer, followed by fully connected layers with
-        ReLU activation, dropout, and batch normalization.
-
+        The additional layers include fully connected layers with ReLU activation, dropout, and batch normalization.
 
     Model Architecture:
-        1. Base Model (Pre-trained ResNet-50):
-            * The base_model attribute represents the ResNet-50 backbone pre-trained on ImageNet.
+        1. Base Model (Pre-trained ResNet-18):
+            * The base_model attribute represents the ResNet-18 backbone pre-trained on ImageNet.
             * Parameters of the base model are frozen (requires_grad = False) to prevent backpropagation.
 
-        2. Additional Convolutional Layer:
-            * The additional_conv attribute represents a convolutional layer with 1000 input channels
-              (from ResNet output) and 512 output channels.
-            * ReLU activation function (relu) is applied after the convolutional layer.
-
-        3. Additional Layers:
+        2. Additional Layers:
             * dropout1: Dropout layer with a dropout probability of 0.3.
-            * fc1: Fully connected layer with 512 input features and 256 output features.
+            * fc1: Fully connected layer with 1000 input features (ResNet output) and 256 output features.
             * dropout2: Dropout layer with a dropout probability of 0.4.
             * batch_norm1: Batch normalization layer with 256 features.
             * fc2: Fully connected layer with 256 input features and 128 output features.
@@ -36,33 +29,26 @@ class Net(nn.Module):
             * batch_norm2: Batch normalization layer with 128 features.
             * fc3: Fully connected layer with 128 input features and 5 output features (for classification).
 
-
     Forward Pass:
         The forward method defines the forward pass of the neural network. It takes an input tensor x
         and passes it through the layers defined in the model architecture:
-
-            * The input tensor is passed through the base model (ResNet-50) to extract features.
-            * Additional convolutional layer and activation functions (ReLU) are applied to further
-              process the features.
+            * The input tensor is passed through the base model (ResNet-18) to extract features.
             * Dropout layers are applied to prevent overfitting during training.
             * The feature tensor is flattened and passed through fully connected layers with ReLU
               activation and batch normalization.
             * The output tensor represents the predicted class probabilities for the input samples.
 
-
     Example Usage:
         ```python
-
-            # Instantiate the model
-            model_ = Net()
-
-            # Forward pass with input tensor x
-            output = model_(x)
-
+        # Instantiate the model
+        model_ = Net()
+        # Forward pass with input tensor x
+        output = model_(x)
         ```
     """
     def __init__(self):
         super().__init__()
+        # Load pre-trained ResNet-18 model
         self.base_model = models.resnet18(pretrained=True)
 
         # Freeze parameters to prevent backpropagation
@@ -85,10 +71,23 @@ class Net(nn.Module):
         self.fc3 = nn.Linear(128, 5)
 
     def forward(self, x):
+        """
+        Perform a forward pass through the network.
+
+        Args:
+            x (torch.Tensor): Input tensor containing the images.
+
+        Returns:
+            torch.Tensor: Output tensor containing the class scores for each image.
+        """
+        # Forward pass through base model
         x = self.base_model(x)
         x = self.dropout1(x)
 
+        # Flatten the tensor
         x = torch.flatten(x, 1)
+
+        # Forward pass through additional layers
         x = self.fc1(x)
         x = nn.functional.relu(x)
         x = self.dropout2(x)
