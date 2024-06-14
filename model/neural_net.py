@@ -72,9 +72,10 @@ class Net(nn.Module):
 
     def forward(self, x):
         """
-        Perform a forward pass through the network.
+        Description:
+            Perform a forward pass through the network.
 
-        Args:
+        Arguments:
             x (torch.Tensor): Input tensor containing the images.
 
         Returns:
@@ -102,10 +103,14 @@ class Net(nn.Module):
 
     def unfreeze_layer(self, layer_name):
         """
-        Unfreeze a specific layer in the base model.
+        Description:
+            Unfreeze a specific layer in the base model.
 
-        Args:
+        Arguments:
             layer_name (str): Name of the layer to unfreeze.
+
+        Returns:
+            None
         """
         for name, param in self.base_model.named_parameters():
             if name == layer_name:
