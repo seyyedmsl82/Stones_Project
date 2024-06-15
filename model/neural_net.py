@@ -1,3 +1,40 @@
+"""
+This script defines a neural network model for image classification using the PyTorch framework.
+The main functionalities and components include:
+
+1. **Import Libraries**:
+    Import necessary libraries such as PyTorch, torchvision, and torch.nn modules.
+
+2. **Net Class**:
+   - **Description**:
+        The `Net` class defines a neural network model using a pre-trained ResNet-18 backbone followed by additional
+        fully connected layers for feature extraction and classification.
+
+   - **Model Architecture**:
+        1. **Base Model (Pre-trained ResNet-18)**:
+            - The `base_model` attribute represents the ResNet-18 backbone pre-trained on ImageNet.
+            - Parameters of the base model are frozen (`requires_grad = False`) to prevent backpropagation.
+
+        2. **Additional Layers**:
+            - Dropout layers with probabilities of 0.3 and 0.4.
+            - Fully connected layers with 1000, 256, 128 input/output features.
+            - Batch normalization layers for 256 and 128 features.
+            - The final fully connected layer outputs 5 classes for classification.
+
+3. **Forward Pass**:
+    The `forward` method defines the forward pass through the network, passing input tensors through the base
+    model and additional layers to produce class scores.
+
+4. **Layer Unfreezing**:
+    The `unfreeze_layer` method allows specific layers in the base model to be unfrozen for fine-tuning during
+    training.
+
+
+Author: SeyyedReza Moslemi
+Date: Jun 15, 2024
+"""
+
+
 # Import necessary libraries
 import torch
 from torch import nn
