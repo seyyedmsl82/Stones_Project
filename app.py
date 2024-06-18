@@ -1,3 +1,52 @@
+"""
+This script sets up a web-based user interface for stone classification using a pre-trained neural network model.
+It leverages Flask for the web server and Google Drive API for file storage. The main functionalities include:
+
+1. **Import Libraries and Modules**:
+    Import necessary libraries such as Flask, PyTorch, OpenCV, and Google Drive API, as well as local modules for the
+    model and utilities.
+
+2. **Google Drive API Initialization**:
+    Set up credentials and initialize the Google Drive API client for uploading images.
+
+3. **Initialize Flask Application**:
+    Set up the Flask web application, configure the upload folder, and create necessary directories.
+
+4. **Load the Pre-trained Model**:
+    Load the stone classification model, move it to the appropriate device (GPU or CPU), and set it to evaluation mode.
+
+5. **Define Image Transformations and Class Labels**:
+    Set up image transformations for preprocessing and define the class labels for classification.
+
+6. **Helper Functions**:
+    Define utility functions for uploading files to Google Drive and predicting the class of input images using the
+    pre-trained model.
+
+7. **Flask Routes**:
+    Define the main routes for the web application:
+    - `/`: Handles the upload and processing of images, performs classification, and renders the results.
+    - `/media/<path:path>`: Serves static files from the media directory.
+    - `/upload`: Handles file uploads to Google Drive.
+
+8. **Main Execution**:
+    Run the Flask application in debug mode.
+
+Dependencies:
+    - flask
+    - googleapiclient
+    - torch
+    - torchvision
+    - PIL
+    - cv2
+
+Usage:
+    Run this script to start the Flask web server and access the web interface for stone classification.
+
+Author: SeyyedReza Moslemi
+Date: Jun 15, 2024
+"""
+
+
 import os
 import glob
 from time import time
@@ -7,20 +56,21 @@ from flask import Flask, request, jsonify, render_template, send_from_directory
 from PIL import Image
 import torch
 from torchvision import transforms
-import matplotlib.pyplot as plt
-from pytorch_grad_cam import GradCAM
+# import matplotlib.pyplot as plt
+# from pytorch_grad_cam import GradCAM
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaFileUpload
 from google.oauth2.credentials import Credentials
 
 # Local imports
 from model import neural_net
-from utils import image_cropper, grad_cam
+from utils import image_cropper
 
 # Google Drive API credentials
 CLIENT_ID = '142857969907-2f0geqqrfn8ius4lk9bv2jvlmbgrrki6.apps.googleusercontent.com'
 CLIENT_SECRET = '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'
-REFRESH_TOKEN = '1//04371Rfl2TnF4CgYIARAAGAQSNwF-L9IrXo-EHSSC3pe_FzJRQgGtP48-jUcJ8TFj6B8wDlz1soBKPMJJjSQshCI8UX2ZzXICaQs'
+REFRESH_TOKEN = \
+    '1//04371Rfl2TnF4CgYIARAAGAQSNwF-L9IrXo-EHSSC3pe_FzJRQgGtP48-jUcJ8TFj6B8wDlz1soBKPMJJjSQshCI8UX2ZzXICaQs'
 
 # Load credentials from refresh token
 creds = Credentials(
@@ -90,14 +140,12 @@ def upload_file_to_drive(file_path):
         print(f'An error occurred: {error}')
 
 
-def predict(image_path, w, h):
+def predict(image_path):
     """
     Predicts the class of an image using the pre-trained model.
 
-    Args:
+    Arguments:
         image_path (str): Path to the image file.
-        w (int): Width of the image.
-        h (int): Height of the image.
 
     Returns:
         tuple: Predicted class label and accuracy.
@@ -156,7 +204,7 @@ def upload_image():
 
             # Predict the class of input image
             h, w = processed_image.shape[:2]
-            predicted_class, accuracy = predict(new_file_path, w, h)
+            predicted_class, accuracy = predict(new_file_path)
 
             # Resize to have a better demonstration
             h_, w_ = selected_image.shape[:2]
