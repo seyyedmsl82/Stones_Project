@@ -70,7 +70,7 @@ from utils import image_cropper
 CLIENT_ID = '142857969907-2f0geqqrfn8ius4lk9bv2jvlmbgrrki6.apps.googleusercontent.com'
 CLIENT_SECRET = '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'
 REFRESH_TOKEN = \
-    '1//04371Rfl2TnF4CgYIARAAGAQSNwF-L9IrXo-EHSSC3pe_FzJRQgGtP48-jUcJ8TFj6B8wDlz1soBKPMJJjSQshCI8UX2ZzXICaQs'
+    '1//047GbG1Yq8lnaCgYIARAAGAQSNwF-L9Ir3_k-L3iM4Eze-NX-huVvTbdaJxmd15tlXsgzDBypdKT6XUOr_8dsIuOmucTEt162aZ0'
 
 # Load credentials from refresh token
 creds = Credentials(
